@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Space Explorer: Pulsar Finder</title>
+    <title>Deep Space Map: Anomalies & Pulsars</title>
     <style>
         * {
             box-sizing: border-box;
@@ -14,9 +14,9 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #05050c;
+            background-color: #020205;
             font-family: 'Courier New', Courier, monospace;
-            color: #00ff00;
+            color: #00ffaa;
             user-select: none;
         }
         #gameCanvas {
@@ -32,54 +32,91 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(5, 5, 12, 0.85);
+            background: rgba(3, 3, 10, 0.9);
             padding: 15px;
-            border: 1px solid #00ff00;
-            border-radius: 5px;
+            border: 1px solid #00ffaa;
+            border-radius: 6px;
             pointer-events: none;
             line-height: 1.4;
-            max-width: 400px;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+            max-width: 320px;
+            box-shadow: 0 0 20px rgba(0, 255, 170, 0.15);
         }
         .heading {
             font-weight: bold;
             margin-bottom: 8px;
-            border-bottom: 1px solid #00ff00;
+            border-bottom: 1px solid #00ffaa;
             padding-bottom: 4px;
+            text-transform: uppercase;
         }
-        .controls {
-            margin-top: 8px;
-            color: #88ff88;
+        .text-cyan { color: #00ffff; }
+        #locatorPanel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(3, 3, 10, 0.9);
+            padding: 15px;
+            border: 1px solid #00ffff;
+            border-radius: 6px;
+            width: 260px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
         }
-        .mission {
-            margin-top: 12px;
+        .locator-btn {
+            display: block;
+            width: 100%;
+            background: rgba(0, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid #00ffff;
+            padding: 6px 10px;
+            margin: 6px 0;
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        .locator-btn:hover {
+            background: rgba(0, 255, 255, 0.3);
             color: #00ffff;
-            animation: blink 2s infinite;
+            padding-left: 15px;
         }
-        @keyframes blink {
-            50% { opacity: 0.6; }
+        #zoomOutBtn {
+            background: rgba(255, 0, 255, 0.1);
+            border-color: #ff00ff;
+            color: #ff00ff;
+            font-weight: bold;
+            text-align: center;
+        }
+        #zoomOutBtn:hover {
+            background: rgba(255, 0, 255, 0.3);
+            color: #ffffff;
+            padding-left: 10px;
         }
     </style>
 </head>
 <body>
 
     <div id="hud">
-        <div class="heading">--- NAVIGATION SYSTEM ---</div>
-        <div id="coords">Coords: X=0, Y=0</div>
-        <div id="zoom">Zoom Level: 1.00x</div>
-        <div class="controls">
-            Controls:<br>
-            • Drag Mouse   : Move Camera<br>
-            • Scroll Wheel : Zoom In/Out<br>
-            • R Key        : Reset to Sun
-        </div>
-        <div class="mission">
-            MISSION: Drag top-right (X: 3500, Y: -2500) to find the ultra-fast spinning Pulsar!
+        <div class="heading">🛰️ Telemetry Matrix</div>
+        <div id="coords">Sector: X=0, Y=0</div>
+        <div id="zoom">Magnification: 1.00x</div>
+        <div style="margin-top: 10px; font-size: 11px; color: #88aaaa;">
+            • Drag map to scan space<br>
+            • Scroll wheel to adjust zoom<br>
+            • Click tracking array to jump
         </div>
     </div>
 
-    <canvas id="gameCanvas"></canvas>
+    <div id="locatorPanel">
+        <div class="heading text-cyan">📡 Tracking Array</div>
+        <button class="locator-btn" onclick="focusTarget('Sun')">☀️ Solar Core</button>
+        <button class="locator-btn" onclick="focusTarget('Earth')">🌍 Earth Orbit</button>
+        <button class="locator-btn" onclick="focusTarget('PSR B1919+21')">⚡ Fast Pulsar</button>
+        <button class="locator-btn" onclick="focusTarget('Gargantua')">🕳️ Black Hole</button>
+        <button class="locator-btn" onclick="focusTarget('Helix Nebula')">🌌 Cosmic Nebula</button>
+        <button class="locator-btn" id="zoomOutBtn" onclick="zoomMaxOut()">🔍 Max Zoom Out</button>
+    </div>
 
+    <canvas id="gameCanvas"></canvas>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -93,32 +130,156 @@
 
         let cameraX = 0;
         let cameraY = 0;
-        let zoom = 1.0;
+        let zoom = 0.8;
+        let targetCameraX = 0;
+        let targetCameraY = 0;
+        let targetZoom = 0.8;
         let isDragging = false;
         let lastMouseX = 0;
         let lastMouseY = 0;
-        let pulsarAngle = 0;
+        let timeGlobal = 0;
 
-        const stars = [];
-        const numStars = 200;
-        for (let i = 0; i < numStars; i++) {
-            stars.push({
-                x: (Math.random() - 0.5) * 10000,
-                y: (Math.random() - 0.5) * 10000,
-                size: Math.random() * 2 + 0.5
-            });
+        const starsLayer1 = []; 
+        const starsLayer2 = []; 
+        const starsLayer3 = []; 
+        const skyNebulae = [];
+
+        function generateDeepSky() {
+            for (let i = 0; i < 600; i++) {
+                starsLayer1.push({ x: (Math.random() - 0.5) * 16000, y: (Math.random() - 0.5) * 16000, r: Math.random() * 0.8 + 0.3 });
+            }
+            for (let i = 0; i < 400; i++) {
+                starsLayer2.push({ x: (Math.random() - 0.5) * 16000, y: (Math.random() - 0.5) * 16000, r: Math.random() * 1.2 + 0.8 });
+            }
+            for (let i = 0; i < 150; i++) {
+                starsLayer3.push({ 
+                    x: (Math.random() - 0.5) * 16000, 
+                    y: (Math.random() - 0.5) * 16000, 
+                    r: Math.random() * 2 + 1.5,
+                    phase: Math.random() * Math.PI 
+                });
+            }
+            const cloudColors = ['rgba(100, 0, 150, 0.04)', 'rgba(0, 50, 150, 0.04)', 'rgba(0, 120, 100, 0.03)', 'rgba(150, 0, 50, 0.03)'];
+            for (let i = 0; i < 40; i++) {
+                skyNebulae.push({
+                    x: (Math.random() - 0.5) * 14000,
+                    y: (Math.random() - 0.5) * 14000,
+                    r: Math.random() * 800 + 400,
+                    color: cloudColors[Math.floor(Math.random() * cloudColors.length)]
+                });
+            }
+        }
+        generateDeepSky();
+        const bodies = [
+            { id: "Sun", name: "Sun", radius: 55, isCustom: true, orbitRadius: 0, speed: 0, angle: 0, 
+              draw: (x, y, r) => {
+                  let grad = ctx.createRadialGradient(x, y, 0, x, y, r * 2.5);
+                  grad.addColorStop(0, '#ffffff');
+                  grad.addColorStop(0.2, '#ffea00');
+                  grad.addColorStop(0.5, '#ff6a00');
+                  grad.addColorStop(1, 'rgba(255,106,0,0)');
+                  ctx.fillStyle = grad;
+                  ctx.beginPath(); ctx.arc(x, y, r * 2.5, 0, Math.PI*2); ctx.fill();
+              }
+            },
+            { id: "Mercury", name: "Mercury", radius: 9, color: "#8a8d8f", orbitRadius: 180, speed: 0.02, angle: 1.2, features: 'craters' },
+            { id: "Venus", name: "Venus", radius: 15, color: "#e39a5c", orbitRadius: 290, speed: 0.014, angle: 4.5, features: 'atmosphere' },
+            { id: "Earth", name: "Earth", radius: 18, color: "#2b82c9", orbitRadius: 420, speed: 0.01, angle: 0.3, features: 'continents' },
+            { id: "Mars", name: "Mars", radius: 13, color: "#c1440e", orbitRadius: 560, speed: 0.008, angle: 2.1, features: 'icecaps' },
+            { id: "PSR B1919+21", name: "PSR B1919+21 (Pulsar)", radius: 12, fixedX: 3800, fixedY: -2200, isCustom: true,
+              draw: (x, y, r) => {
+                  let spin = timeGlobal * 0.8;
+                  ctx.save();
+                  ctx.translate(x, y);
+                  ctx.rotate(spin);
+                  for (let angleOffset of [0, Math.PI]) {
+                      ctx.save();
+                      ctx.rotate(angleOffset);
+                      let jetGrad = ctx.createLinearGradient(0, 0, 0, -2500 * zoom);
+                      jetGrad.addColorStop(0, 'rgba(255,255,255,1)');
+                      jetGrad.addColorStop(0.1, 'rgba(0,180,255,0.6)');
+                      jetGrad.addColorStop(0.4, 'rgba(200,0,255,0.15)');
+                      jetGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                      ctx.fillStyle = jetGrad;
+                      ctx.beginPath();
+                      ctx.moveTo(-8 * zoom, 0);
+                      ctx.lineTo(8 * zoom, 0);
+                      ctx.lineTo(120 * zoom, -2500 * zoom);
+                      ctx.lineTo(-120 * zoom, -2500 * zoom);
+                      ctx.closePath();
+                      ctx.fill();
+                  }
+                  ctx.restore();
+                  let coreGrad = ctx.createRadialGradient(x, y, 0, x, y, r * 1.8);
+                  coreGrad.addColorStop(0, '#ffffff');
+                  coreGrad.addColorStop(0.3, '#00ffff');
+                  coreGrad.addColorStop(1, 'rgba(0,128,255,0)');
+                  ctx.fillStyle = coreGrad;
+                  ctx.beginPath(); ctx.arc(x, y, r * 1.8, 0, Math.PI*2); ctx.fill();
+              }
+            },
+            { id: "Gargantua", name: "Gargantua (Black Hole)", radius: 25, fixedX: -4500, fixedY: 4000, isCustom: true,
+              draw: (x, y, r) => {
+                  ctx.save();
+                  ctx.translate(x, y);
+                  ctx.rotate(timeGlobal * 0.02);
+                  let diskGrad = ctx.createRadialGradient(0, 0, r * 1.1, 0, 0, r * 5);
+                  diskGrad.addColorStop(0, 'rgba(255,140,0,1)');
+                  diskGrad.addColorStop(0.2, 'rgba(255,60,0,0.8)');
+                  diskGrad.addColorStop(0.6, 'rgba(100,0,255,0.2)');
+                  diskGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                  ctx.strokeStyle = diskGrad;
+                  ctx.lineWidth = r * 2.5;
+                  ctx.beginPath(); ctx.ellipse(0, 0, r * 4, r * 1.5, Math.PI / 7, 0, Math.PI * 2); ctx.stroke();
+                  ctx.restore();
+                  ctx.fillStyle = '#000000';
+                  ctx.shadowColor = '#00ffff';
+                  ctx.shadowBlur = 15 * zoom;
+                  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+                  ctx.shadowBlur = 0;
+              }
+            },
+            { id: "Helix Nebula", name: "Helix Nebula (Eye of God)", radius: 110, fixedX: -1500, fixedY: -5500, isCustom: true,
+              draw: (x, y, r) => {
+                  let nebGrad = ctx.createRadialGradient(x, y, r * 0.1, x, y, r);
+                  nebGrad.addColorStop(0, 'rgba(0, 0, 50, 0)');
+                  nebGrad.addColorStop(0.2, 'rgba(0, 255, 200, 0.4)');
+                  nebGrad.addColorStop(0.5, 'rgba(255, 0, 100, 0.3)');
+                  nebGrad.addColorStop(0.8, 'rgba(120, 0, 200, 0.15)');
+                  nebGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                  ctx.fillStyle = nebGrad;
+                  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+                  ctx.fillStyle = '#ffffff';
+                  ctx.beginPath(); ctx.arc(x, y, 4 * zoom, 0, Math.PI * 2); ctx.fill();
+              }
+            }
+        ];
+        function focusTarget(id) {
+            let target = bodies.find(b => b.id === id);
+            if (!target) return;
+            if (target.orbitRadius > 0) {
+                targetCameraX = target.orbitRadius * Math.cos(target.angle);
+                targetCameraY = target.orbitRadius * Math.sin(target.angle);
+                targetZoom = 1.5;
+            } else if (target.orbitRadius === 0) {
+                targetCameraX = 0;
+                targetCameraY = 0;
+                targetZoom = 1.0;
+            } else {
+                targetCameraX = target.fixedX;
+                targetCameraY = target.fixedY;
+                targetZoom = target.id === "Helix Nebula" ? 0.4 : 1.3;
+            }
         }
 
-        const bodies = [
-            { name: "Sun", radius: 45, color: "#ffd700", orbitRadius: 0, speed: 0, angle: 0 },
-            { name: "Mercury", radius: 8, color: "#a9a9a9", orbitRadius: 150, speed: 0.03, angle: Math.random() * Math.PI * 2 },
-            { name: "Venus", radius: 14, color: "#e09428", orbitRadius: 240, speed: 0.02, angle: Math.random() * Math.PI * 2 },
-            { name: "Earth", radius: 16, color: "#4169e1", orbitRadius: 360, speed: 0.015, angle: Math.random() * Math.PI * 2 },
-            { name: "Mars", radius: 12, color: "#bc4a3c", orbitRadius: 480, speed: 0.01, angle: Math.random() * Math.PI * 2 },
-            { name: "PSR B1919+21 (Pulsar)", radius: 10, color: "#00bfff", fixedX: 3500, fixedY: -2500, isPulsar: true }
-        ];
+        function zoomMaxOut() {
+            targetCameraX = 0;
+            targetCameraY = 0;
+            targetZoom = 0.08;
+        }
 
         window.addEventListener('mousedown', (e) => {
+            if (e.target.closest('#locatorPanel') || e.target.closest('#hud')) return;
             isDragging = true;
             lastMouseX = e.clientX;
             lastMouseY = e.clientY;
@@ -130,6 +291,8 @@
             const deltaY = e.clientY - lastMouseY;
             cameraX -= deltaX / zoom;
             cameraY -= deltaY / zoom;
+            targetCameraX = cameraX;
+            targetCameraY = cameraY;
             lastMouseX = e.clientX;
             lastMouseY = e.clientY;
         });
@@ -139,22 +302,18 @@
 
         window.addEventListener('wheel', (e) => {
             if (e.deltaY < 0) {
-                zoom *= 1.1;
+                targetZoom *= 1.25;
             } else {
-                zoom /= 1.1;
+                targetZoom /= 1.25;
             }
-            zoom = Math.max(0.05, Math.min(zoom, 5.0));
-        });
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'r') {
-                cameraX = 0;
-                cameraY = 0;
-                zoom = 1.0;
-            }
+            targetZoom = Math.max(0.03, Math.min(targetZoom, 6.0));
         });
 
         function gameLoop() {
+            timeGlobal += 1;
+            cameraX += (targetCameraX - cameraX) * 0.1;
+            cameraY += (targetCameraY - cameraY) * 0.1;
+            zoom += (targetZoom - zoom) * 0.1;
             updatePhysics();
             render();
             updateHUD();
@@ -167,101 +326,144 @@
                     body.angle += body.speed;
                 }
             });
-            pulsarAngle += 0.25;
         }
 
         function render() {
-            ctx.fillStyle = '#05050c';
+            ctx.fillStyle = '#020205';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
 
-            ctx.fillStyle = '#ffffff';
-            stars.forEach(star => {
-                const screenX = (star.x - cameraX) * zoom + centerX;
-                const screenY = (star.y - cameraY) * zoom + centerY;
-                if (screenX >= 0 && screenX <= canvas.width && screenY >= 0 && screenY <= canvas.height) {
-                    ctx.beginPath();
-                    ctx.arc(screenX, screenY, star.size * Math.max(0.5, zoom), 0, Math.PI * 2);
+            skyNebulae.forEach(neb => {
+                const screenX = (neb.x - cameraX) * zoom + centerX;
+                const screenY = (neb.y - cameraY) * zoom + centerY;
+                const scrRadius = neb.r * zoom;
+                if (screenX + scrRadius > 0 && screenX - scrRadius < canvas.width && screenY + scrRadius > 0 && screenY - scrRadius < canvas.height) {
+                    let cloudGrad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, scrRadius);
+                    cloudGrad.addColorStop(0, neb.color);
+                    cloudGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = cloudGrad;
+                    ctx.beginPath(); ctx.arc(screenX, screenY, scrRadius, 0, Math.PI * 2); ctx.fill();
+                }
+            });
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            starsLayer1.forEach(st => {
+                const scrX = (st.x - cameraX) * zoom + centerX;
+                const scrY = (st.y - cameraY) * zoom + centerY;
+                if (scrX >= 0 && scrX <= canvas.width && scrY >= 0 && scrY <= canvas.height) {
+                    ctx.fillRect(scrX, scrY, st.r, st.r);
+                }
+            });
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+            starsLayer2.forEach(st => {
+                const scrX = (st.x - cameraX) * zoom + centerX;
+                const scrY = (st.y - cameraY) * zoom + centerY;
+                if (scrX >= 0 && scrX <= canvas.width && scrY >= 0 && scrY <= canvas.height) {
+                    ctx.beginPath(); ctx.arc(scrX, scrY, st.r * Math.max(0.4, zoom), 0, Math.PI * 2); ctx.fill();
+                }
+            });
+
+            starsLayer3.forEach(st => {
+                const scrX = (st.x - cameraX) * zoom + centerX;
+                const scrY = (st.y - cameraY) * zoom + centerY;
+                if (scrX >= 0 && scrX <= canvas.width && scrY >= 0 && scrY <= canvas.height) {
+                    let twist = Math.sin(timeGlobal * 0.05 + st.phase) * 0.5 + 0.5;
+                    ctx.fillStyle = `rgba(200, 240, 255, ${0.3 + twist * 0.7})`;
+                    ctx.beginPath(); 
+                    ctx.arc(scrX, scrY, st.r * (0.6 + twist * 0.6) * Math.max(0.4, zoom), 0, Math.PI * 2); 
                     ctx.fill();
+                }
+            });
+
+            bodies.forEach(body => {
+                if (body.orbitRadius > 0) {
+                    const sunX = (0 - cameraX) * zoom + centerX;
+                    const sunY = (0 - cameraY) * zoom + centerY;
+                    ctx.beginPath();
+                    ctx.arc(sunX, sunY, body.orbitRadius * zoom, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(0, 255, 170, 0.06)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
                 }
             });
 
             bodies.forEach(body => {
                 let worldX = 0;
                 let worldY = 0;
-
                 if (body.orbitRadius > 0) {
                     worldX = body.orbitRadius * Math.cos(body.angle);
                     worldY = body.orbitRadius * Math.sin(body.angle);
-
-                    const sunScreenX = (0 - cameraX) * zoom + centerX;
-                    const sunScreenY = (0 - cameraY) * zoom + centerY;
-                    ctx.beginPath();
-                    ctx.arc(sunScreenX, sunScreenY, body.orbitRadius * zoom, 0, Math.PI * 2);
-                    ctx.strokeStyle = 'rgba(64, 64, 96, 0.4)';
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                } else if (body.isPulsar) {
+                } else if (body.orbitRadius === 0) {
+                    worldX = 0; worldY = 0;
+                } else {
                     worldX = body.fixedX;
                     worldY = body.fixedY;
                 }
 
                 const screenX = (worldX - cameraX) * zoom + centerX;
                 const screenY = (worldY - cameraY) * zoom + centerY;
-                const scaledRadius = Math.max(1.5, body.radius * zoom);
+                const scaledRadius = Math.max(2, body.radius * zoom);
 
-                if (body.isPulsar) {
-                    ctx.save();
-                    ctx.translate(screenX, screenY);
-                    ctx.rotate(pulsarAngle);
-                    drawPulsarBeam();
-                    ctx.rotate(Math.PI);
-                    drawPulsarBeam();
-                    ctx.restore();
-
-                    ctx.beginPath();
-                    ctx.arc(screenX, screenY, scaledRadius + (Math.random() * 6 * zoom), 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(135, 206, 250, 0.2)';
-                    ctx.fill();
+                if (screenX < -200 || screenX > canvas.width + 200 || screenY < -200 || screenY > canvas.height + 200) {
+                    return;
                 }
 
-                ctx.beginPath();
-                ctx.arc(screenX, screenY, scaledRadius, 0, Math.PI * 2);
-                ctx.fillStyle = body.color;
-                ctx.fill();
+                if (body.isCustom) {
+                    body.draw(screenX, screenY, scaledRadius);
+                } else {
+                    ctx.save();
+                    ctx.translate(screenX, screenY);
+                    ctx.beginPath(); ctx.arc(0, 0, scaledRadius, 0, Math.PI * 2);
+                    ctx.fillStyle = body.color; ctx.fill();
 
-                const fontSize = Math.max(10, Math.floor(14 * zoom));
-                ctx.font = `${fontSize}px Arial`;
+                    if (body.features === 'craters') {
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+                        ctx.beginPath(); ctx.arc(-scaledRadius*0.3, -scaledRadius*0.2, scaledRadius*0.25, 0, Math.PI*2); ctx.fill();
+                        ctx.beginPath(); ctx.arc(scaledRadius*0.4, scaledRadius*0.3, scaledRadius*0.2, 0, Math.PI*2); ctx.fill();
+                        ctx.beginPath(); ctx.arc(-scaledRadius*0.1, scaledRadius*0.5, scaledRadius*0.15, 0, Math.PI*2); ctx.fill();
+                    } 
+                    else if (body.features === 'atmosphere') {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+                        ctx.fillRect(-scaledRadius, -scaledRadius*0.4, scaledRadius*2, scaledRadius*0.25);
+                        ctx.fillRect(-scaledRadius, scaledRadius*0.2, scaledRadius*2, scaledRadius*0.15);
+                    } 
+                    else if (body.features === 'continents') {
+                        ctx.fillStyle = '#228b22';
+                        ctx.beginPath();
+                        ctx.ellipse(-scaledRadius*0.2, -scaledRadius*0.1, scaledRadius*0.5, scaledRadius*0.4, 0, 0, Math.PI*2);
+                        ctx.ellipse(scaledRadius*0.3, scaledRadius*0.2, scaledRadius*0.4, Math.max(1, scaledRadius*0.5), Math.PI/4, 0, Math.PI*2);
+                        ctx.fill();
+                        let atmoGrad = ctx.createRadialGradient(0, 0, scaledRadius * 0.9, 0, 0, scaledRadius * 1.2);
+                        atmoGrad.addColorStop(0, 'rgba(65, 105, 225, 0.6)');
+                        atmoGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                        ctx.fillStyle = atmoGrad;
+                        ctx.beginPath(); ctx.arc(0, 0, scaledRadius * 1.2, 0, Math.PI*2); ctx.fill();
+                    } 
+                    else if (body.features === 'icecaps') {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath(); ctx.arc(0, -scaledRadius*0.8, scaledRadius*0.35, 0, Math.PI, false); ctx.fill();
+                        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+                        ctx.fillRect(-scaledRadius, scaledRadius*0.1, scaledRadius*2, scaledRadius*0.15);
+                    }
+
+                    let shadowGrad = ctx.createLinearGradient(-scaledRadius, -scaledRadius, scaledRadius, scaledRadius);
+                    shadowGrad.addColorStop(0, 'rgba(255,255,255,0.08)');
+                    shadowGrad.addColorStop(0.5, 'rgba(0,0,0,0.2)');
+                    shadowGrad.addColorStop(1, 'rgba(0,0,0,0.85)');
+                    ctx.fillStyle = shadowGrad;
+                    ctx.beginPath(); ctx.arc(0, 0, scaledRadius, 0, Math.PI * 2); ctx.fill();
+                    ctx.restore();
+                }
+
+                const fontHeight = Math.max(10, Math.floor(13 * zoom));
+                ctx.font = `${fontHeight}px 'Courier New'`;
                 ctx.fillStyle = '#ffffff';
-                ctx.fillText(body.name, screenX + scaledRadius + 6, screenY + 4);
+                ctx.fillText(body.name, screenX + scaledRadius + 8, screenY + 4);
             });
         }
 
-        function drawPulsarBeam() {
-            const beamLength = 2000 * zoom;
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(0, -beamLength);
-            ctx.strokeStyle = 'rgba(0, 100, 255, 0.25)';
-            ctx.lineWidth = Math.max(4, 30 * zoom);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(0, -beamLength);
-            ctx.strokeStyle = '#c8e6ff';
-            ctx.lineWidth = Math.max(1, 5 * zoom);
-            ctx.stroke();
-        }
-
         function updateHUD() {
-            document.getElementById('coords').innerText = `Coords: X=${Math.round(cameraX)}, Y=${Math.round(cameraY)}`;
-            document.getElementById('zoom').innerText = `Zoom Level: ${zoom.toFixed(2)}x`;
-        }
-
-        gameLoop();
-    </script>
-</body>
-</html>
+            document.getElementById('coords').innerText = `Sector: X=${Math.round(cameraX)}, Y=${Math.round(cameraY)}`;
+document.getElementById('zoom').innerText = Magnification: ${zoom.toFixed(2)}x;}gameLoop();
