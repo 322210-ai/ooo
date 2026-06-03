@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Space Cartography Matrix</title>
+    <title>Universal Map Array: Anomalies & Extremophiles</title>
     <style>
         * {
             box-sizing: border-box;
@@ -58,88 +58,73 @@
             border: 1px solid #00ffff;
             border-radius: 6px;
             width: 280px;
-            max-height: calc(100vh - 40px);
+            max-height: 85vh;
             overflow-y: auto;
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
-        }
-        .section-label {
-            font-size: 10px;
-            color: #88aaaa;
-            margin: 8px 0 2px 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
         .locator-btn {
             display: block;
             width: 100%;
-            background: rgba(0, 255, 255, 0.06);
+            background: rgba(0, 255, 255, 0.08);
             color: #ffffff;
             border: 1px solid #00ffff;
-            padding: 5px 8px;
-            margin: 4px 0;
+            padding: 6px 10px;
+            margin: 5px 0;
             cursor: pointer;
             text-align: left;
             font-family: inherit;
             font-size: 11px;
-            transition: all 0.15s ease;
+            transition: all 0.2s ease;
         }
         .locator-btn:hover {
-            background: rgba(0, 255, 255, 0.2);
+            background: rgba(0, 255, 255, 0.25);
             color: #00ffff;
-            padding-left: 12px;
+            padding-left: 14px;
         }
-        #macroBtn {
+        #zoomOutBtn {
             background: rgba(255, 0, 255, 0.08);
             border-color: #ff00ff;
             color: #ff00ff;
             font-weight: bold;
             text-align: center;
         }
-        #macroBtn:hover {
-            background: rgba(255, 0, 255, 0.2);
+        #zoomOutBtn:hover {
+            background: rgba(255, 0, 255, 0.25);
             color: #ffffff;
-            padding-left: 8px;
+            padding-left: 10px;
         }
     </style>
 </head>
 <body>
 
     <div id="hud">
-        <div class="heading">🛰️ Telemetry Array</div>
+        <div class="heading">🛰️ Tracking Array</div>
         <div id="coords">Sector: X=0, Y=0</div>
-        <div id="zoom">Magnification: 0.50x</div>
+        <div id="zoom">Magnification: 1.00x</div>
         <div style="margin-top: 10px; font-size: 11px; color: #88aaaa;">
-            • Drag map to pan viewport<br>
+            • Click and drag to pan space<br>
             • Use mouse wheel to zoom<br>
-            • Use Tracking Matrix to navigate
+            • Click targets to track them
         </div>
     </div>
 
     <div id="locatorPanel">
-        <div class="heading text-cyan">📡 Tracking Matrix</div>
-        <button class="locator-btn" id="macroBtn" onclick="zoomMaxOut()">🔍 Macro Map View</button>
-        
-        <div class="section-label">Core Solar System</div>
+        <div class="heading text-cyan">📡 System Matrix</div>
         <button class="locator-btn" onclick="focusTarget('Sun')">☀️ Solar Core</button>
-        <button class="locator-btn" onclick="focusTarget('Earth')">🌍 Earth & Inner Planets</button>
-        <button class="locator-btn" onclick="focusTarget('TOI-178')">🌀 TOI-178 Resonance System</button>
-        
-        <div class="section-label">Exotic Planets & Giants</div>
+        <button class="locator-btn" onclick="focusTarget('Earth')">🌍 Inner Planets System</button>
+        <button class="locator-btn" onclick="focusTarget('TOI-178b')">🌀 TOI-178 Resonance Chain</button>
         <button class="locator-btn" onclick="focusTarget('Kelt-9b')">🔥 Kelt-9b (Ultra-Hot Saturn)</button>
-        <button class="locator-btn" onclick="focusTarget('Wasp-76b')">🌧️ Wasp-76b (Iron Rain)</button>
-        <button class="locator-btn" onclick="focusTarget('GJ 1214b')">💧 GJ 1214b (Water World)</button>
-        <button class="locator-btn" onclick="focusTarget('Kepler-16b')">🌅 Kepler-16b (Tatooine Dual Sun)</button>
-        
-        <div class="section-label">Gravitational Anomalies</div>
-        <button class="locator-btn" onclick="focusTarget('Gargantua')">🕳️ Gargantua (Accretion Black Hole)</button>
-        <button class="locator-btn" onclick="focusTarget('Ton-618')">👹 TON 618 (Hypermassive Void)</button>
-        <button class="locator-btn" onclick="focusTarget('PSR B1919+21')">⚡ PSR B1919+21 (Optimized Pulsar)</button>
-        <button class="locator-btn" onclick="focusTarget('Einstein Ring')">⭕ Gravitational Einstein Ring</button>
-        
-        <div class="section-label">Deep Space Formations</div>
-        <button class="locator-btn" onclick="focusTarget('Sizzling Seven')">🌌 Guardians (Sizzling Seven Cluster)</button>
-        <button class="locator-btn" onclick="focusTarget('Hoags Object')">🪐 Hoag's Object (Ring Galaxy)</button>
+        <button class="locator-btn" onclick="focusTarget('Wasp-76b')">🌧️ Wasp-76b (Iron Rain World)</button>
+        <button class="locator-btn" onclick="focusTarget('GJ 1214b')">🌊 GJ 1214b (Steam Atmosphere)</button>
+        <button class="locator-btn" onclick="focusTarget('Kepler-16b')">🪐 Kepler-16b (Circumbinary)</button>
+        <button class="locator-btn" onclick="focusTarget('PSR B1919+21')">⚡ PSR B1919+21 (Safe Pulsar)</button>
+        <button class="locator-btn" onclick="focusTarget('Gargantua')">🕳️ Gargantua Black Hole</button>
+        <button class="locator-btn" onclick="focusTarget('TON 618')">😈 TON 618 (Hypermassive Hole)</button>
+        <button class="locator-btn" onclick="focusTarget('Einstein Ring')">⭕ Einstein Gravitational Ring</button>
+        <button class="locator-btn" onclick="focusTarget('Guardians')">💎 Guardians (Sizzling Seven)</button>
+        <button class="locator-btn" onclick="focusTarget('Hoags Object')">🌌 Hoag's Ring Galaxy</button>
         <button class="locator-btn" onclick="focusTarget('Bootes Void')">👁️ The Böotes Void Anomaly</button>
+        <button class="locator-btn" id="zoomOutBtn" onclick="zoomMaxOut()">🔍 Macro Sector Zoom Out</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -154,179 +139,124 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        let cameraX = 0, cameraY = 0, zoom = 0.4;
-        let targetCameraX = 0, targetCameraY = 0, targetZoom = 0.4;
-        let isDragging = false, lastMouseX = 0, lastMouseY = 0, timeGlobal = 0;
+        let cameraX = 0; let cameraY = 0; let zoom = 0.5;
+        let targetCameraX = 0; let targetCameraY = 0; let targetZoom = 0.5;
+        let isDragging = false; let lastMouseX = 0; let lastMouseY = 0; let timeGlobal = 0;
 
-        const stars1 = [], stars2 = [], stars3 = [], nebulae = [];
+        const starsLayer1 = []; const starsLayer2 = []; const starsLayer3 = []; const skyNebulae = [];
 
-        function generateUniverseBackdrop() {
-            for (let i = 0; i < 700; i++) {
-                stars1.push({ x: (Math.random() - 0.5) * 32000, y: (Math.random() - 0.5) * 32000, r: Math.random() * 0.7 + 0.3 });
+        function generateDeepSky() {
+            for (let i = 0; i < 900; i++) {
+                starsLayer1.push({ x: (Math.random() - 0.5) * 24000, y: (Math.random() - 0.5) * 24000, r: Math.random() * 0.7 + 0.3 });
             }
-            for (let i = 0; i < 400; i++) {
-                stars2.push({ x: (Math.random() - 0.5) * 32000, y: (Math.random() - 0.5) * 32000, r: Math.random() * 1.2 + 0.6 });
+            for (let i = 0; i < 500; i++) {
+                starsLayer2.push({ x: (Math.random() - 0.5) * 24000, y: (Math.random() - 0.5) * 24000, r: Math.random() * 1.3 + 0.7 });
             }
-            for (let i = 0; i < 120; i++) {
-                stars3.push({ x: (Math.random() - 0.5) * 32000, y: (Math.random() - 0.5) * 32000, r: Math.random() * 2.0 + 1.2, phase: Math.random() * Math.PI });
+            for (let i = 0; i < 200; i++) {
+                starsLayer3.push({ x: (Math.random() - 0.5) * 24000, y: (Math.random() - 0.5) * 24000, r: Math.random() * 2.2 + 1.5, phase: Math.random() * Math.PI });
             }
-            const cloudGases = ['rgba(120,0,180,0.03)', 'rgba(0,60,200,0.03)', 'rgba(0,140,100,0.02)', 'rgba(180,0,60,0.02)'];
-            for (let i = 0; i < 50; i++) {
-                nebulae.push({
-                    x: (Math.random() - 0.5) * 26000,
-                    y: (Math.random() - 0.5) * 26000,
-                    r: Math.random() * 1500 + 600,
-                    color: cloudGases[Math.floor(Math.random() * cloudGases.length)]
-                });
+            const cloudColors = ['rgba(140, 0, 200, 0.04)', 'rgba(0, 70, 220, 0.04)', 'rgba(0, 160, 120, 0.03)', 'rgba(200, 0, 70, 0.03)'];
+            for (let i = 0; i < 65; i++) {
+                skyNebulae.push({ x: (Math.random() - 0.5) * 20000, y: (Math.random() - 0.5) * 20000, r: Math.random() * 1200 + 500, color: cloudColors[Math.floor(Math.random() * cloudColors.length)] });
             }
         }
-        generateUniverseBackdrop();
+        generateDeepSky();
         const bodies = [
-            // Core System
-            { id: "Sun", name: "Sun", radius: 60, isCustom: true, orbitRadius: 0, speed: 0, angle: 0, 
+            { id: "Sun", name: "Sun", radius: 65, isCustom: true, orbitRadius: 0, speed: 0, angle: 0, 
               draw: (x, y, r) => {
-                  let grad = ctx.createRadialGradient(x, y, 0, x, y, r * 2.0);
-                  grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.3, '#ffcc00');
-                  grad.addColorStop(0.7, '#ff4400'); grad.addColorStop(1, 'rgba(0,0,0,0)');
-                  ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(x, y, r * 2.0, 0, Math.PI*2); ctx.fill();
+                  let grad = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2);
+                  grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.2, '#ffea00'); grad.addColorStop(0.6, '#ff5500'); grad.addColorStop(1, 'rgba(255,85,0,0)');
+                  ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(x, y, r * 2.2, 0, Math.PI*2); ctx.fill();
               }
             },
-            { id: "Mercury", name: "Mercury", radius: 8, color: "#8a8e91", orbitRadius: 280, speed: 0.012, angle: 0.2, features: 'craters' },
-            { id: "Venus", name: "Venus", radius: 13, color: "#deb073", orbitRadius: 420, speed: 0.009, angle: 1.8, features: 'atmosphere' },
-            { id: "Earth", name: "Earth", radius: 15, color: "#3a8cd9", orbitRadius: 580, speed: 0.007, angle: 3.4, features: 'continents' },
-            { id: "Mars", name: "Mars", radius: 11, color: "#cc4c18", orbitRadius: 720, speed: 0.005, angle: 0.9, features: 'icecaps' },
-
-            // TOI-178 Compact Resonant Chain System
-            { id: "TOI-178", name: "TOI-178 System Core", radius: 35, isCustom: true, fixedX: 2000, fixedY: -1500,
-              draw: (x, y, r) => {
-                  let grad = ctx.createRadialGradient(x, y, 0, x, y, r * 1.5);
-                  grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.4, '#ff99dd'); grad.addColorStop(1, 'rgba(0,0,0,0)');
-                  ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, Math.PI*2); ctx.fill();
-                  // Draw 3 tight mathematical orbital harmonic resonance bands
-                  ctx.strokeStyle = 'rgba(255,150,220,0.1)'; ctx.lineWidth = 1;
-                  for(let d of [50, 85, 120]) {
-                      ctx.beginPath(); ctx.arc(x, y, d * zoom, 0, Math.PI*2); ctx.stroke();
-                  }
-              }
-            },
-
-            // Extreme Exotic Planets
-            { id: "Kelt-9b", name: "KELT-9b (Ultra-Hot Gas Giant)", radius: 24, color: "#5599ff", fixedX: 4500, fixedY: 2000, features: 'tail', tailColor: 'rgba(0,150,255,0.25)' },
-            { id: "Wasp-76b", name: "WASP-76b (Molten Iron Rain)", radius: 22, color: "#331111", fixedX: 6000, fixedY: 2500, features: 'lava-bands' },
-            { id: "GJ 1214b", name: "GJ 1214b (Thick Steam Waterworld)", radius: 18, color: "#44bbcc", fixedX: 4000, fixedY: 4500, features: 'steam-glow' },
+            { id: "Mercury", name: "Mercury", radius: 7, color: "#95989a", orbitRadius: 190, speed: 0.015, angle: 0.5, features: 'craters' },
+            { id: "Venus", name: "Venus", radius: 13, color: "#e6a163", orbitRadius: 280, speed: 0.011, angle: 2.1, features: 'atmosphere' },
+            { id: "Earth", name: "Earth", radius: 15, color: "#3289d6", orbitRadius: 380, speed: 0.008, angle: 4.3, features: 'continents' },
+            { id: "Mars", name: "Mars", radius: 11, color: "#d14b15", orbitRadius: 470, speed: 0.006, angle: 1.2, features: 'icecaps' },
             
-            // Kepler-16b (Circumbinary Planet - Tatooine)
-            { id: "Kepler-16b", name: "Kepler-16b (Tatooine System)", radius: 16, isCustom: true, fixedX: 1500, fixedY: 4000,
+            { id: "TOI-178b", name: "TOI-178b (Resonant Inner)", radius: 10, color: "#8b9bb4", orbitRadius: 580, speed: 0.0075, angle: 0, features: 'craters' },
+            { id: "TOI-178c", name: "TOI-178c (Resonant Mid)", radius: 12, color: "#cca3a3", orbitRadius: 680, speed: 0.0050, angle: Math.PI / 3, features: 'atmosphere' },
+            { id: "TOI-178d", name: "TOI-178d (Resonant Outer)", radius: 14, color: "#a3c2c2", orbitRadius: 780, speed: 0.0033, angle: (2 * Math.PI) / 3, features: 'atmosphere' }
+        ];
+        bodies.push(
+            { id: "Kelt-9b", name: "Kelt-9b (Ultra-Hot Saturn)", radius: 24, color: "#ff4500", orbitRadius: 950, speed: 0.0025, angle: 1.5, features: 'atmosphere' },
+            { id: "Wasp-76b", name: "Wasp-76b (Iron Rain World)", radius: 26, color: "#4b0082", orbitRadius: 1150, speed: 0.0018, angle: 3.8, features: 'atmosphere' },
+            { id: "GJ 1214b", name: "GJ 1214b (Water World)", radius: 19, color: "#00ffff", orbitRadius: 1350, speed: 0.0012, angle: 5.2, features: 'atmosphere' },
+            { id: "Kepler-16b", name: "Kepler-16b (Tatooine Dual)", radius: 21, color: "#d2b48c", orbitRadius: 1600, speed: 0.0009, angle: 2.7, features: 'rings' },
+            
+            { id: "PSR B1919+21", name: "PSR B1919+21 (Pulsar)", radius: 8, fixedX: 4500, fixedY: -3500, isCustom: true,
               draw: (x, y, r) => {
-                  let offset = Math.sin(timeGlobal * 0.03) * 12 * zoom;
-                  // Primary Orange Sun
-                  let g1 = ctx.createRadialGradient(x - offset, y, 0, x - offset, y, 22 * zoom);
-                  g1.addColorStop(0, '#ffaa44'); g1.addColorStop(1, 'rgba(0,0,0,0)');
-                  ctx.fillStyle = g1; ctx.beginPath(); ctx.arc(x - offset, y, 22 * zoom, 0, Math.PI*2); ctx.fill();
-                  // Secondary Red Dwarf Sun
-                  let g2 = ctx.createRadialGradient(x + offset, y + offset*0.5, 0, x + offset, y + offset*0.5, 14 * zoom);
-                  g2.addColorStop(0, '#ff3333'); g2.addColorStop(1, 'rgba(0,0,0,0)');
-                  ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(x + offset, y + offset*0.5, 14 * zoom, 0, Math.PI*2); ctx.fill();
-                  // The Binary Orbiter Planet
-                  let pX = x + Math.cos(timeGlobal*0.01) * 65 * zoom;
-                  let pY = y + Math.sin(timeGlobal*0.01) * 35 * zoom;
-                  ctx.fillStyle = '#cc9966'; ctx.beginPath(); ctx.arc(pX, pY, r, 0, Math.PI*2); ctx.fill();
-              }
-            },
-            // Gravitational Anomalies: Gargantua Accretion Black Hole
-            { id: "Gargantua", name: "Gargantua (Accretion Black Hole)", radius: 26, isCustom: true, fixedX: -4500, fixedY: 5000,
-              draw: (x, y, r) => {
-                  ctx.save(); ctx.translate(x, y); ctx.rotate(timeGlobal * 0.02);
-                  let disk = ctx.createRadialGradient(0, 0, r * 1.1, 0, 0, r * 5.5);
-                  disk.addColorStop(0, '#ff8800'); disk.addColorStop(0.2, '#ff2200');
-                  disk.addColorStop(0.6, 'rgba(90,0,200,0.15)'); diskGrad = disk;
-                  disk.addColorStop(1, 'rgba(0,0,0,0)');
-                  ctx.strokeStyle = disk; ctx.lineWidth = r * 2.0;
-                  ctx.beginPath(); ctx.ellipse(0, 0, r * 4.5, r * 1.6, Math.PI / 6, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
-                  ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-              }
-            },
-
-            // TON 618 Hypermassive Black Hole
-            { id: "Ton-618", name: "TON 618 (Hypermassive Black Hole Void)", radius: 55, isCustom: true, fixedX: -7500, fixedY: 8500,
-              draw: (x, y, r) => {
-                  ctx.save(); ctx.translate(x, y); ctx.rotate(-timeGlobal * 0.008);
-                  let giantDisk = ctx.createRadialGradient(0, 0, r * 1.05, 0, 0, r * 7);
-                  giantDisk.addColorStop(0, '#ffffff'); giantDisk.addColorStop(0.15, '#6600ff');
-                  giantDisk.addColorStop(0.6, 'rgba(0,0,50,0.3)'); giantDisk.addColorStop(1, 'rgba(0,0,0,0)');
-                  ctx.strokeStyle = giantDisk; ctx.lineWidth = r * 3.5;
-                  ctx.beginPath(); ctx.ellipse(0, 0, r * 6.5, r * 3.0, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
-                  ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-              }
-            },
-
-            // TONED-DOWN PERFORMANCE OPTIMIZED PULSAR (Completely safe for Chromebooks)
-            { id: "PSR B1919+21", name: "PSR B1919+21 (Toned-down Pulsar)", radius: 10, isCustom: true, fixedX: 5500, fixedY: -4500,
-              draw: (x, y, r) => {
-                  let spin = timeGlobal * 0.4;
+                  let spin = timeGlobal * 0.12; 
                   ctx.save(); ctx.translate(x, y); ctx.rotate(spin);
-                  ctx.lineWidth = Math.max(1, 4 * zoom);
-                  // Renders using lightweight transparency steps instead of heavy looping algorithms
-                  for (let offset of [0, Math.PI]) {
-                      ctx.save(); ctx.rotate(offset);
-                      ctx.strokeStyle = 'rgba(0, 180, 255, 0.4)';
-                      ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0, -1800 * zoom); ctx.stroke();
-                      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(1, 1.5 * zoom);
-                      ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0, -1800 * zoom); ctx.stroke();
-                      ctx.restore();
+                  for (let angleOffset of [0, Math.PI]) {
+                      ctx.save(); ctx.rotate(angleOffset);
+                      let jetGrad = ctx.createLinearGradient(0, 0, 0, -2000 * zoom);
+                      jetGrad.addColorStop(0, 'rgba(255,255,255,1)'); jetGrad.addColorStop(0.3, 'rgba(0,180,255,0.25)'); jetGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                      ctx.fillStyle = jetGrad; ctx.beginPath(); ctx.moveTo(-4 * zoom, 0); ctx.lineTo(4 * zoom, 0);
+                      ctx.lineTo(60 * zoom, -2000 * zoom); ctx.lineTo(-60 * zoom, -2000 * zoom);
+                      ctx.closePath(); ctx.fill(); ctx.restore();
                   }
                   ctx.restore();
-                  let core = ctx.createRadialGradient(x, y, 0, x, y, r * 1.6);
-                  core.addColorStop(0, '#ffffff'); core.addColorStop(0.4, '#00bfff'); core.addColorStop(1, 'rgba(0,0,0,0)');
-                  ctx.fillStyle = core; ctx.beginPath(); ctx.arc(x, y, r * 1.6, 0, Math.PI*2); ctx.fill();
-              }
-            },
-
-            // Gravitational Einstein Rings
-            { id: "Einstein Ring", name: "Einstein Ring (Lensed Background Galaxy)", radius: 70, isCustom: true, fixedX: -2000, fixedY: -4000,
-              draw: (x, y, r) => {
-                  ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.arc(x, y, 8 * zoom, 0, Math.PI*2); ctx.fill();
-                  ctx.strokeStyle = 'rgba(255, 165, 0, 0.6)'; ctx.lineWidth = Math.max(1.5, 5 * zoom);
-                  ctx.beginPath(); ctx.arc(x, y, r * zoom, 0, Math.PI*2); ctx.stroke();
-              }
-            },
-
-            // Guardians Cluster (Sizzling Seven stars tightly bound together)
-            { id: "Sizzling Seven", name: "Guardians Cluster (Sizzling Seven)", radius: 150, isCustom: true, fixedX: 3000, fixedY: -8000,
-              draw: (x, y, r) => {
-                  ctx.fillStyle = 'rgba(0,255,255,0.03)'; ctx.beginPath(); ctx.arc(x, y, r * zoom, 0, Math.PI*2); ctx.fill();
-                  let starSeeds = [[0,0], [-40,-30], [50,20], [-20,50], [30,-50], [60,-20], [-60,10]];
-                  ctx.fillStyle = '#ffffff';
-                  for(let s of starSeeds) {
-                      ctx.beginPath(); ctx.arc(x + s[0]*zoom, y + s[1]*zoom, (Math.random()*3 + 2)*zoom, 0, Math.PI*2); ctx.fill();
-                  }
-              }
-            },
-
-            // Hoag's Object (Perfect Ring Galaxy formation)
-            { id: "Hoags Object", name: "Hoag's Object (Ring Galaxy)", radius: 180, isCustom: true, fixedX: -7000, fixedY: -3000,
-              draw: (x, y, r) => {
-                  // Central yellow core bubble
-                  let coreGrad = ctx.createRadialGradient(x, y, 0, x, y, 25 * zoom);
-                  coreGrad.addColorStop(0, '#ffffcc'); coreGrad.addColorStop(1, 'rgba(218,165,32,0)');
-                  ctx.fillStyle = coreGrad; ctx.beginPath(); ctx.arc(x, y, 25 * zoom, 0, Math.PI*2); ctx.fill();
-                  // Perfectly detached outer blue stellar ring structure
-                  ctx.strokeStyle = 'rgba(100, 180, 255, 0.45)'; ctx.lineWidth = Math.max(2, 28 * zoom);
-                  ctx.beginPath(); ctx.arc(x, y, r * 0.7 * zoom, 0, Math.PI*2); ctx.stroke();
-              }
-            },
-
-            // The Bootes Void Anomaly
-            { id: "Bootes Void", name: "The Böotes Void (The Great Nothing)", radius: 700, isCustom: true, fixedX: -8000, fixedY: -8000,
-              draw: (x, y, r) => {
-                  let voidGrad = ctx.createRadialGradient(x, y, r * 0.3, x, y, r);
-                  voidGrad.addColorStop(0, '#010103'); voidGrad.addColorStop(0.7, 'rgba(2,2,7,0.85)'); voidGrad.addColorStop(1, 'rgba(0,0,0,0)');
-                  ctx.fillStyle = voidGrad; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-                  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(255, 0, 50, 0.12)';
-                  ctx.lineWidth = Math.max(1, 2 * zoom); ctx.setLineDash([5 * zoom, 15 * zoom]); ctx.stroke(); ctx.setLineDash([]);
+                  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, r * 1.4, 0, Math.PI*2); ctx.fill();
               }
             }
-        ];
+        );
+        bodies.push(
+            { id: "Gargantua", name: "Gargantua (Black Hole)", radius: 28, fixedX: -5500, fixedY: 5000, isCustom: true,
+              draw: (x, y, r) => {
+                  ctx.save(); ctx.translate(x, y); ctx.rotate(timeGlobal * 0.015);
+                  let diskGrad = ctx.createRadialGradient(0, 0, r * 1.1, 0, 0, r * 5);
+                  diskGrad.addColorStop(0, '#ffaa00'); diskGrad.addColorStop(0.2, '#ff3300'); diskGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                  ctx.strokeStyle = diskGrad; ctx.lineWidth = r * 1.8;
+                  ctx.beginPath(); ctx.ellipse(0, 0, r * 4.5, r * 1.5, Math.PI / 6, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+                  ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+              }
+            },
+            { id: "TON 618", name: "TON 618 (Hypermassive Hole)", radius: 50, fixedX: 7500, fixedY: 7500, isCustom: true,
+              draw: (x, y, r) => {
+                  ctx.save(); ctx.translate(x, y); ctx.rotate(-timeGlobal * 0.008);
+                  let diskGrad = ctx.createRadialGradient(0, 0, r * 1.1, 0, 0, r * 7);
+                  diskGrad.addColorStop(0, '#ffffff'); diskGrad.addColorStop(0.3, '#ff00ff'); diskGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                  ctx.strokeStyle = diskGrad; ctx.lineWidth = r * 2.5;
+                  ctx.beginPath(); ctx.ellipse(0, 0, r * 6, r * 2.5, -Math.PI / 4, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+                  ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+              }
+            },
+            { id: "Einstein Ring", name: "Einstein Ring Horizon", radius: 40, fixedX: 6500, fixedY: -6500, isCustom: true,
+              draw: (x, y, r) => {
+                  ctx.beginPath(); ctx.arc(x, y, r * 1.6, 0, Math.PI * 2);
+                  ctx.strokeStyle = 'rgba(255, 165, 0, 0.7)'; ctx.lineWidth = 4 * zoom; ctx.stroke();
+                  ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+              }
+            },
+            { id: "Guardians", name: "Guardians (Sizzling Seven Cluster)", radius: 80, fixedX: -2000, fixedY: -6500, isCustom: true,
+              draw: (x, y, r) => {
+                  let points = [[0,0], [-40,20], [30,-30], [-20,-40], [40,40], [-50,-10], [10,50]];
+                  points.forEach((pt, idx) => {
+                      let bx = x + pt[0] * zoom; let by = y + pt[1] * zoom;
+                      let f = Math.sin(timeGlobal * 0.1 + idx) * 3 * zoom;
+                      ctx.fillStyle = idx % 2 === 0 ? '#ff3366' : '#ffcc00';
+                      ctx.beginPath(); ctx.arc(bx, by, (6 * zoom) + f, 0, Math.PI * 2); ctx.fill();
+                  });
+              }
+            },
+            { id: "Hoags Object", name: "Hoag's Object (Ring Galaxy)", radius: 120, fixedX: -7500, fixedY: -1500, isCustom: true,
+              draw: (x, y, r) => {
+                  ctx.fillStyle = '#ffea00'; ctx.beginPath(); ctx.arc(x, y, 14 * zoom, 0, Math.PI * 2); ctx.fill();
+                  ctx.strokeStyle = 'rgba(100, 149, 237, 0.5)'; ctx.lineWidth = 25 * zoom;
+                  ctx.beginPath(); ctx.arc(x, y, r * 0.8, 0, Math.PI * 2); ctx.stroke();
+              }
+            },
+            { id: "Bootes Void", name: "The Böotes Void Anomaly", radius: 550, fixedX: -8500, fixedY: -7500, isCustom: true,
+              draw: (x, y, r) => {
+                  let voidGrad = ctx.createRadialGradient(x, y, r * 0.4, x, y, r);
+                  voidGrad.addColorStop(0, '#010103'); voidGrad.addColorStop(1, 'rgba(2,2,7,0)');
+                  ctx.fillStyle = voidGrad; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+                  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(255, 0, 50, 0.12)';
+                  ctx.lineWidth = 2 * zoom; ctx.stroke();
+              }
+            }
+        );
         function focusTarget(id) {
             let target = bodies.find(b => b.id === id);
             if (!target) return;
@@ -340,30 +270,24 @@
                 targetCameraX = target.fixedX;
                 targetCameraY = target.fixedY;
                 if (target.id === "Bootes Void") targetZoom = 0.08;
-                else if (target.id === "Hoag's Object") targetZoom = 0.15;
-                else if (target.id === "Orion Nebula") targetZoom = 0.12;
+                else if (target.id === "Hoags Object") targetZoom = 0.15;
                 else targetZoom = 0.8;
             }
         }
 
         function zoomMaxOut() {
-            targetCameraX = 0;
-            targetCameraY = 0;
-            targetZoom = 0.02; 
+            targetCameraX = 0; targetCameraY = 0; targetZoom = 0.02; 
         }
 
         window.addEventListener('mousedown', (e) => {
             if (e.target.closest('#locatorPanel') || e.target.closest('#hud')) return;
-            isDragging = true;
-            lastMouseX = e.clientX; lastMouseY = e.clientY;
+            isDragging = true; lastMouseX = e.clientX; lastMouseY = e.clientY;
         });
 
         window.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
-            const deltaX = e.clientX - lastMouseX;
-            const deltaY = e.clientY - lastMouseY;
-            cameraX -= deltaX / zoom;
-            cameraY -= deltaY / zoom;
+            const deltaX = e.clientX - lastMouseX; const deltaY = e.clientY - lastMouseY;
+            cameraX -= deltaX / zoom; cameraY -= deltaY / zoom;
             targetCameraX = cameraX; targetCameraY = cameraY;
             lastMouseX = e.clientX; lastMouseY = e.clientY;
         });
@@ -379,19 +303,13 @@
 
         function gameLoop() {
             timeGlobal += 1;
-            cameraX += (targetCameraX - cameraX) * 0.08;
-            cameraY += (targetCameraY - cameraY) * 0.08;
-            zoom += (targetZoom - zoom) * 0.08;
-            updatePhysics();
-            render();
-            updateHUD();
+            cameraX += (targetCameraX - cameraX) * 0.08; cameraY += (targetCameraY - cameraY) * 0.08; zoom += (targetZoom - zoom) * 0.08;
+            updatePhysics(); render(); updateHUD();
             requestAnimationFrame(gameLoop);
         }
 
         function updatePhysics() {
-            bodies.forEach(body => {
-                if (body.orbitRadius > 0) body.angle += body.speed;
-            });
+            bodies.forEach(body => { if (body.orbitRadius > 0) body.angle += body.speed; });
         }
 
         function render() {
@@ -399,9 +317,7 @@
             const centerX = canvas.width / 2; const centerY = canvas.height / 2;
 
             skyNebulae.forEach(neb => {
-                const screenX = (neb.x - cameraX) * zoom + centerX;
-                const screenY = (neb.y - cameraY) * zoom + centerY;
-                const scrRadius = neb.r * zoom;
+                const screenX = (neb.x - cameraX) * zoom + centerX; const screenY = (neb.y - cameraY) * zoom + centerY; const scrRadius = neb.r * zoom;
                 if (screenX + scrRadius > 0 && screenX - scrRadius < canvas.width && screenY + scrRadius > 0 && screenY - scrRadius < canvas.height) {
                     let cloudGrad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, scrRadius);
                     cloudGrad.addColorStop(0, neb.color); cloudGrad.addColorStop(1, 'rgba(0,0,0,0)');
@@ -410,25 +326,22 @@
             });
 
             let bVoid = bodies.find(b => b.id === "Bootes Void");
-            const vX = bVoid.fixedX; const vY = bVoid.fixedY; const vR = bVoid.radius;
             const checkInVoid = (sx, sy) => {
-                let dx = sx - vX; let dy = sy - vY;
-                return Math.sqrt(dx*dx + dy*dy) < vR * 0.85;
+                let dx = sx - bVoid.fixedX; let dy = sy - bVoid.fixedY;
+                return Math.sqrt(dx*dx + dy*dy) < bVoid.radius * 0.85;
             };
 
             ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
             starsLayer1.forEach(st => {
                 if (checkInVoid(st.x, st.y)) return;
-                const scrX = (st.x - cameraX) * zoom + centerX;
-                const scrY = (st.y - cameraY) * zoom + centerY;
+                const scrX = (st.x - cameraX) * zoom + centerX; const scrY = (st.y - cameraY) * zoom + centerY;
                 if (scrX >= 0 && scrX <= canvas.width && scrY >= 0 && scrY <= canvas.height) ctx.fillRect(scrX, scrY, st.r, st.r);
             });
 
             ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
             starsLayer2.forEach(st => {
                 if (checkInVoid(st.x, st.y)) return;
-                const scrX = (st.x - cameraX) * zoom + centerX;
-                const scrY = (st.y - cameraY) * zoom + centerY;
+                const scrX = (st.x - cameraX) * zoom + centerX; const scrY = (st.y - cameraY) * zoom + centerY;
                 if (scrX >= 0 && scrX <= canvas.width && scrY >= 0 && scrY <= canvas.height) {
                     ctx.beginPath(); ctx.arc(scrX, scrY, st.r * Math.max(0.4, zoom), 0, Math.PI * 2); ctx.fill();
                 }
@@ -436,8 +349,7 @@
 
             starsLayer3.forEach(st => {
                 if (checkInVoid(st.x, st.y)) return;
-                const scrX = (st.x - cameraX) * zoom + centerX;
-                const scrY = (st.y - cameraY) * zoom + centerY;
+                const scrX = (st.x - cameraX) * zoom + centerX; const scrY = (st.y - cameraY) * zoom + centerY;
                 if (scrX >= 0 && scrX <= canvas.width && scrY >= 0 && scrY <= canvas.height) {
                     let twist = Math.sin(timeGlobal * 0.05 + st.phase) * 0.5 + 0.5;
                     ctx.fillStyle = `rgba(195, 235, 255, ${0.25 + twist * 0.75})`;
@@ -456,10 +368,7 @@
             bodies.forEach(body => {
                 let worldX = body.orbitRadius > 0 ? body.orbitRadius * Math.cos(body.angle) : (body.orbitRadius === 0 ? 0 : body.fixedX);
                 let worldY = body.orbitRadius > 0 ? body.orbitRadius * Math.sin(body.angle) : (body.orbitRadius === 0 ? 0 : body.fixedY);
-
-                const screenX = (worldX - cameraX) * zoom + centerX;
-                const screenY = (worldY - cameraY) * zoom + centerY;
-                const scaledRadius = Math.max(2, body.radius * zoom);
+                const screenX = (worldX - cameraX) * zoom + centerX; const screenY = (worldY - cameraY) * zoom + centerY; const scaledRadius = Math.max(2, body.radius * zoom);
 
                 if (screenX < -1500 || screenX > canvas.width + 1500 || screenY < -1500 || screenY > canvas.height + 1500) return;
 
@@ -467,8 +376,7 @@
                     body.draw(screenX, screenY, scaledRadius);
                 } else {
                     ctx.save(); ctx.translate(screenX, screenY);
-                    ctx.beginPath(); ctx.arc(0, 0, scaledRadius, 0, Math.PI * 2);
-                    ctx.fillStyle = body.color; ctx.fill();
+                    ctx.beginPath(); ctx.arc(0, 0, scaledRadius, 0, Math.PI * 2); ctx.fillStyle = body.color; ctx.fill();
 
                     if (body.features === 'craters') {
                         ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
@@ -499,7 +407,6 @@
                     ctx.fillStyle = shadowGrad; ctx.beginPath(); ctx.arc(0, 0, scaledRadius, 0, Math.PI * 2); ctx.fill();
                     ctx.restore();
                 }
-
                 const fontHeight = Math.max(10, Math.floor(13 * zoom));
                 ctx.font = `${fontHeight}px 'Courier New'`; ctx.fillStyle = '#ffffff';
                 ctx.fillText(body.name, screenX + scaledRadius + 8, screenY + 4);
