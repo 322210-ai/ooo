@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Space Explorer: Pulsar Finder</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #05050c;
+            font-family: 'Courier New', Courier, monospace;
+            color: #00ff00;
+            user-select: none;
+        }
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+        #gameCanvas:active {
+            cursor: grabbing;
+        }
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(5, 5, 12, 0.85);
+            padding: 15px;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            pointer-events: none;
+            line-height: 1.4;
+            max-width: 400px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
+        .heading {
+            font-weight: bold;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 4px;
+        }
+        .controls {
+            margin-top: 8px;
+            color: #88ff88;
+        }
+        .mission {
+            margin-top: 12px;
+            color: #00ffff;
+            animation: blink 2s infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="hud">
+        <div class="heading">--- NAVIGATION SYSTEM ---</div>
+        <div id="coords">Coords: X=0, Y=0</div>
+        <div id="zoom">Zoom Level: 1.00x</div>
+        <div class="controls">
+            Controls:<br>
+            • Drag Mouse   : Move Camera<br>
+            • Scroll Wheel : Zoom In/Out<br>
+            • R Key        : Reset to Sun
+        </div>
+        <div class="mission">
+            MISSION: Drag top-right (X: 3500, Y: -2500) to find the ultra-fast spinning Pulsar!
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let cameraX = 0;
+        let cameraY = 0;
+        let zoom = 1.0;
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let pulsarAngle = 0;
+
+        const stars = [];
+        const numStars = 200;
+        for (let i = 0; i < numStars; i++) {
+            stars.push({
+                x: (Math.random() - 0.5) * 10000,
+                y: (Math.random() - 0.5) * 10000,
+                size: Math.random() * 2 + 0.5
+            });
+        }
+
+        const bodies = [
+            { name: "Sun", radius: 45, color: "#ffd700", orbitRadius: 0, speed: 0, angle: 0 },
+            { name: "Mercury", radius: 8, color: "#a9a9a9", orbitRadius: 150, speed: 0.03, angle: Math.random() * Math.PI * 2 },
+            { name: "Venus", radius: 14, color: "#e09428", orbitRadius: 240, speed: 0.02, angle: Math.random() * Math.PI * 2 },
+            { name: "Earth", radius: 16, color: "#4169e1", orbitRadius: 360, speed: 0.015, angle: Math.random() * Math.PI * 2 },
+            { name: "Mars", radius: 12, color: "#bc4a3c", orbitRadius: 480, speed: 0.01, angle: Math.random() * Math.PI * 2 },
+            { name: "PSR B1919+21 (Pulsar)", radius: 10, color: "#00bfff", fixedX: 3500, fixedY: -2500, isPulsar: true }
+        ];
+
+        window.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const deltaX = e.clientX - lastMouseX;
+            const deltaY = e.clientY - lastMouseY;
+            cameraX -= deltaX / zoom;
+            cameraY -= deltaY / zoom;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        window.addEventListener('mouseup', () => isDragging = false);
+        window.addEventListener('mouseleave', () => isDragging = false);
+
+        window.addEventListener('wheel', (e) => {
+            if (e.deltaY < 0) {
+                zoom *= 1.1;
+            } else {
+                zoom /= 1.1;
+            }
+            zoom = Math.max(0.05, Math.min(zoom, 5.0));
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'r') {
+                cameraX = 0;
+                cameraY = 0;
+                zoom = 1.0;
+            }
+        });
+
+        function gameLoop() {
+            updatePhysics();
+            render();
+            updateHUD();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updatePhysics() {
+            bodies.forEach(body => {
+                if (body.orbitRadius > 0) {
+                    body.angle += body.speed;
+                }
+            });
+            pulsarAngle += 0.25;
+        }
+
+        function render() {
+            ctx.fillStyle = '#05050c';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            ctx.fillStyle = '#ffffff';
+            stars.forEach(star => {
+                const screenX = (star.x - cameraX) * zoom + centerX;
+                const screenY = (star.y - cameraY) * zoom + centerY;
+                if (screenX >= 0 && screenX <= canvas.width && screenY >= 0 && screenY <= canvas.height) {
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, star.size * Math.max(0.5, zoom), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            bodies.forEach(body => {
+                let worldX = 0;
+                let worldY = 0;
+
+                if (body.orbitRadius > 0) {
+                    worldX = body.orbitRadius * Math.cos(body.angle);
+                    worldY = body.orbitRadius * Math.sin(body.angle);
+
+                    const sunScreenX = (0 - cameraX) * zoom + centerX;
+                    const sunScreenY = (0 - cameraY) * zoom + centerY;
+                    ctx.beginPath();
+                    ctx.arc(sunScreenX, sunScreenY, body.orbitRadius * zoom, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(64, 64, 96, 0.4)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                } else if (body.isPulsar) {
+                    worldX = body.fixedX;
+                    worldY = body.fixedY;
+                }
+
+                const screenX = (worldX - cameraX) * zoom + centerX;
+                const screenY = (worldY - cameraY) * zoom + centerY;
+                const scaledRadius = Math.max(1.5, body.radius * zoom);
+
+                if (body.isPulsar) {
+                    ctx.save();
+                    ctx.translate(screenX, screenY);
+                    ctx.rotate(pulsarAngle);
+                    drawPulsarBeam();
+                    ctx.rotate(Math.PI);
+                    drawPulsarBeam();
+                    ctx.restore();
+
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, scaledRadius + (Math.random() * 6 * zoom), 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(135, 206, 250, 0.2)';
+                    ctx.fill();
+                }
+
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, scaledRadius, 0, Math.PI * 2);
+                ctx.fillStyle = body.color;
+                ctx.fill();
+
+                const fontSize = Math.max(10, Math.floor(14 * zoom));
+                ctx.font = `${fontSize}px Arial`;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(body.name, screenX + scaledRadius + 6, screenY + 4);
+            });
+        }
+
+        function drawPulsarBeam() {
+            const beamLength = 2000 * zoom;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -beamLength);
+            ctx.strokeStyle = 'rgba(0, 100, 255, 0.25)';
+            ctx.lineWidth = Math.max(4, 30 * zoom);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -beamLength);
+            ctx.strokeStyle = '#c8e6ff';
+            ctx.lineWidth = Math.max(1, 5 * zoom);
+            ctx.stroke();
+        }
+
+        function updateHUD() {
+            document.getElementById('coords').innerText = `Coords: X=${Math.round(cameraX)}, Y=${Math.round(cameraY)}`;
+            document.getElementById('zoom').innerText = `Zoom Level: ${zoom.toFixed(2)}x`;
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
