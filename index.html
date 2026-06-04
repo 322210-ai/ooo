@@ -853,35 +853,69 @@
                 }
             });
 
-            // 4. Layer Render Branches Mapping Elements
-            if (activeLayer === VISUAL_LAYERS.COSMIC) {
+                        if (activeLayer === VISUAL_LAYERS.COSMIC) {
                 activeGalaxies.forEach(gal => {
-                    const screenX = (gal.x - cameraX) * zoom + centerX; const screenY = (gal.y - cameraY) * zoom + centerY; const scaledRadius = gal.r * zoom;
-                    if (screenX + scaledRadius < -200 || screenX - scaledRadius > canvas.width + 200 || screenY + scaledRadius < -200 || screenY - scaledRadius > canvas.height + 200) return;
+                    const screenX = (gal.x - cameraX) * zoom + centerX; 
+                    const screenY = (gal.y - cameraY) * zoom + centerY; 
+                    const scaledRadius = gal.r * zoom;
+                    if (screenX + scaledRadius * 3 < 0 || screenX - scaledRadius * 3 > canvas.width || screenY + scaledRadius * 3 < 0 || screenY - scaledRadius * 3 > canvas.height) return;
 
                     ctx.save(); ctx.translate(screenX, screenY); ctx.rotate(gal.angle || 0);
-                    let grad = ctx.createRadialGradient(0, 0, 0, 0, 0, scaledRadius);
-                    
+
                     if (gal.type === 'void') {
-                        grad.addColorStop(0, 'rgba(1,1,3,0.95)'); grad.addColorStop(1, 'rgba(2,2,8,0)');
+                        // Render a deep, structural gravitational tear for the Bootes Void
+                        let grad = ctx.createRadialGradient(0, 0, 0, 0, 0, scaledRadius * 1.5);
+                        grad.addColorStop(0, 'rgba(1,1,3,0.98)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
                         ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, scaledRadius * 1.5, 0, Math.PI * 2); ctx.fill();
-                        ctx.beginPath(); ctx.arc(0, 0, scaledRadius * 1.2, 0, Math.PI * 2);
-                        ctx.strokeStyle = 'rgba(255,0,50,0.1)'; ctx.lineWidth = 1; ctx.stroke();
+                        ctx.strokeStyle = 'rgba(255, 0, 50, 0.15)'; ctx.lineWidth = 1; ctx.stroke();
                     } else {
-                        grad.addColorStop(0, gal.type === 'spiral' ? '#ffffff' : '#ffeecc');
-                        grad.addColorStop(0.2, gal.type === 'spiral' ? '#00ffff' : '#ffaa00');
-                        grad.addColorStop(0.7, '#ff00ff'); grad.addColorStop(1, 'rgba(0,0,0,0)');
-                        ctx.fillStyle = grad; ctx.beginPath();
-                        if (gal.type === 'spiral') ctx.ellipse(0, 0, scaledRadius * 1.8, scaledRadius * 0.7, 0, 0, Math.PI * 2);
-                        else ctx.arc(0, 0, scaledRadius * 1.2, 0, Math.PI * 2);
-                        ctx.fill();
+                        // Draw Core Nuclear Galactic Bulge Center
+                        let bulgeGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, scaledRadius * 0.4);
+                        bulgeGrad.addColorStop(0, '#ffffff');
+                        bulgeGrad.addColorStop(0.4, gal.type === 'spiral' ? '#00ffff' : '#ffea00');
+                        bulgeGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                        ctx.fillStyle = bulgeGrad; ctx.beginPath(); ctx.arc(0, 0, scaledRadius * 0.4, 0, Math.PI * 2); ctx.fill();
+
+                        // Procedural Logarithmic Spiral Arm Dust Clouds Generator Matrix
+                        let numArms = gal.type === 'spiral' ? 4 : 1; 
+                        let particlesPerArm = gal.type === 'ring' ? 250 : 180;
+                        
+                        ctx.fillStyle = gal.type === 'spiral' ? 'rgba(0, 255, 170, 0.25)' : 'rgba(255, 0, 255, 0.25)';
+                        for (let armIdx = 0; armIdx < numArms; armIdx++) {
+                            let armBaseAngle = (armIdx * Math.PI * 2) / numArms;
+                            
+                            for (let pIdx = 0; pIdx < particlesPerArm; pIdx++) {
+                                // Mathematical log spiral layout spacing
+                                let progress = pIdx / particlesPerArm;
+                                let distance = progress * scaledRadius * 1.8;
+                                let spiralCurve = gal.type === 'ring' ? 0 : distance * 0.015;
+                                let pAngle = armBaseAngle + spiralCurve;
+                                
+                                // Sprinkle noise clusters so arms look cloudy, fluffy, and natural instead of stiff circles
+                                let scatterX = (Math.sin(pIdx * 4.5) * scaledRadius * 0.15) * (1 - progress * 0.4);
+                                let scatterY = (Math.cos(pIdx * 7.2) * scaledRadius * 0.15) * (1 - progress * 0.4);
+                                
+                                let px = Math.cos(pAngle) * distance + scatterX;
+                                let py = Math.sin(pAngle) * distance + scatterY;
+                                let pSize = Math.max(0.6, (1 - progress) * 3 * zoom);
+                                
+                                // Color blend variance out toward the cold outer gas rims
+                                if (gal.type === 'spiral') {
+                                    ctx.fillStyle = pIdx % 3 === 0 ? 'rgba(255, 0, 255, 0.2)' : 'rgba(0, 255, 255, 0.3)';
+                                } else {
+                                    ctx.fillStyle = pIdx % 2 === 0 ? 'rgba(255, 230, 150, 0.25)' : 'rgba(100, 149, 237, 0.25)';
+                                }
+                                
+                                ctx.fillRect(px, py, pSize, pSize);
+                            }
+                        }
                     }
                     ctx.restore();
 
                     ctx.font = "12px 'Courier New'"; ctx.fillStyle = '#ffffff';
-                    ctx.fillText(gal.name, screenX + 12, screenY + 4);
+                    ctx.fillText(gal.name, screenX + 15, screenY + 4);
                 });
-            } 
+            }
             else if (activeLayer === VISUAL_LAYERS.GALACTIC) {
                 activeNebulae.forEach(neb => {
                     const screenX = (neb.x - cameraX) * zoom + centerX; const screenY = (neb.y - cameraY) * zoom + centerY; const scaledRadius = neb.r * zoom;
