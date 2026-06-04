@@ -219,7 +219,7 @@
             }
         }
         generateDeepSkyBackdrop();
-        // Procedural Naming Matrix Generators
+               // Procedural Naming Matrix Generators
         const galaxyPrefixes = ["Andromeda", "MilkyWay", "Triangulum", "Sombrero", "Whirlpool", "Centaurus", "Bode", "Cartwheel", "Cosmic", "Helix"];
         const systemPrefixes = ["Alpha", "Kepler", "Gliese", "Wasp", "Kelt", "TOI", "HD", "PSR", "Vega", "Sirius", "Proxima"];
         const planetPrefixes = ["Prime", "b", "c", "d", "e", "f", "g", "Major", "Minor", "Vera", "Zeta"];
@@ -233,42 +233,99 @@
             rings: { desc: "Low-density gas giant surrounded by a massive, highly reflective ice-particle ring disk.", comp: "Hydrogen, Helium, Water Ice", gravity: "0.93g", temp: "-138°C", hazard: "Ring Shearing" }
         };
 
-        // Seeded Micro Universe Builders
+        // Fixed Universal Map Builder with Automatic Initial Viewport Centering
         function generateUniverseMap() {
             activeGalaxies = [];
-            
+            resizeCanvas();
+            cameraX = 0; cameraY = 0; targetCameraX = 0; targetCameraY = 0;
+            zoom = 0.5; targetZoom = 0.5;
+
             // 1. Generate Core Known Catalog Foundations
             activeGalaxies.push({
-                name: "Milky Way Galaxy", x: 0, y: 0, r: 250, type: "spiral", density: 140, spin: 0.002,
+                name: "Milky Way Galaxy", x: 0, y: 0, r: 180, type: "spiral", density: 140, spin: 0.002,
                 desc: "Home galaxy of humanity. Features a massive central core barred structure and four primary evolutionary spiral star arms."
             });
             activeGalaxies.push({
-                name: "Andromeda Galaxy (M31)", x: 2800, y: -2200, r: 320, type: "spiral", density: 180, spin: -0.001,
+                name: "Andromeda Galaxy (M31)", x: 1200, y: -900, r: 220, type: "spiral", density: 180, spin: -0.001,
                 desc: "The largest local cluster group galaxy, currently on an active multi-billion-year gravitational collision course with the Milky Way."
             });
             activeGalaxies.push({
-                name: "Sombrero Galaxy (M104)", x: -4500, y: 3800, r: 200, type: "elliptical", density: 110, spin: 0.0005,
+                name: "Sombrero Galaxy (M104)", x: -1400, y: 1200, r: 150, type: "elliptical", density: 110, spin: 0.0005,
                 desc: "Features an unusually large central bulge and an incredibly prominent, dark, opaque dust lane tracking around its core perimeter."
             });
             activeGalaxies.push({
-                name: "Hoag's Object", x: -6500, y: -4500, r: 160, type: "ring", density: 90, spin: 0.004,
+                name: "Hoag's Object", x: -2000, y: -1600, r: 110, type: "ring", density: 90, spin: 0.004,
                 desc: "An incredibly rare, perfect ring galaxy formation showcasing an isolated outer ring of hot blue stars circling an older yellow nucleus."
             });
 
             // 2. Procedural Deep-Field Galaxies Generator Array
             for (let i = 0; i < 45; i++) {
                 let ang = Math.random() * Math.PI * 2;
-                let dist = Math.random() * 12000 + 4000;
+                let dist = Math.random() * 5000 + 1500;
                 let typeRoll = Math.random();
                 activeGalaxies.push({
                     name: galaxyPrefixes[Math.floor(Math.random() * galaxyPrefixes.length)] + " Variant-" + Math.floor(Math.random() * 900 + 100),
                     x: Math.cos(ang) * dist, y: Math.sin(ang) * dist,
-                    r: Math.random() * 120 + 80,
+                    r: Math.random() * 90 + 50,
                     type: typeRoll < 0.5 ? "spiral" : (typeRoll < 0.85 ? "elliptical" : "ring"),
                     density: Math.floor(Math.random() * 60 + 60),
-                    spin: (Math.random() - 0.5) * 0.004,
+                    spin: (Math.random() - 0.5) * 0.002,
                     desc: "A distant, ancient cosmic island system mapped by long-range deep space quantum telescope telemetry arrays."
                 });
+            }
+        }
+
+        function populateGalaxySystems(galIdx) {
+            activeStarSystems = []; activeNebulae = [];
+            let gal = activeGalaxies[galIdx];
+            let seedValue = 0;
+            for (let charIdx = 0; charIdx < gal.name.length; charIdx++) { seedValue += gal.name.charCodeAt(charIdx); }
+            function seededRandom() { let x = Math.sin(seedValue++) * 10000; return x - Math.floor(x); }
+
+            const colors = ['rgba(255,0,150,', 'rgba(0,180,255,', 'rgba(0,255,150,', 'rgba(255,100,0,'];
+            for (let i = 0; i < 6; i++) {
+                let rAng = seededRandom() * Math.PI * 2; let rRad = seededRandom() * gal.r * 2.5;
+                activeNebulae.push({
+                    name: systemPrefixes[Math.floor(seededRandom() * systemPrefixes.length)] + " Cosmic Nursery",
+                    x: Math.cos(rAng) * rRad, y: Math.sin(rAng) * rRad, r: seededRandom() * 400 + 200,
+                    color: colors[Math.floor(seededRandom() * colors.length)] + '0.04)'
+                });
+            }
+
+            activeStarSystems.push({ name: "Central Supermassive Black Hole", x: 0, y: 0, starType: "blackhole", radius: 25, planetsCount: 0 });
+
+            let count = gal.density;
+            for (let i = 0; i < count; i++) {
+                let sysX = 0; let sysY = 0;
+                if (gal.type === "spiral") {
+                    let arm = Math.floor(seededRandom() * 4); let angle = (arm * Math.PI / 2) + (seededRandom() * 2.5);
+                    let distance = (seededRandom() * gal.r * 4.5) + 80; angle += distance * 0.0025;
+                    sysX = Math.cos(angle) * distance + (seededRandom() - 0.5) * 60;
+                    sysY = Math.sin(angle) * distance + (seededRandom() - 0.5) * 60;
+                } else if (gal.type === "ring") {
+                    let angle = seededRandom() * Math.PI * 2; let distance = gal.r * 3.5 + (seededRandom() - 0.5) * 50;
+                    if (seededRandom() < 0.15) distance = seededRandom() * 40;
+                    sysX = Math.cos(angle) * distance; sysY = Math.sin(angle) * distance;
+                } else {
+                    let angle = seededRandom() * Math.PI * 2; let distance = seededRandom() * gal.r * 3.8;
+                    sysX = Math.cos(angle) * distance; sysY = Math.sin(angle) * distance;
+                }
+
+                let rollType = seededRandom(); let type = "star-yellow";
+                if (rollType < 0.25) type = "star-blue";
+                else if (rollType < 0.45) type = "star-red";
+                else if (rollType < 0.52) type = "pulsar";
+
+                activeStarSystems.push({
+                    name: systemPrefixes[Math.floor(seededRandom() * systemPrefixes.length)] + " System-" + Math.floor(seededRandom() * 900 + 100),
+                    x: sysX, y: sysY, starType: type, radius: type === "pulsar" ? 7 : (type === "star-blue" ? 22 : 14), planetsCount: Math.floor(seededRandom() * 6) + 3
+                });
+            }
+
+            if (gal.name === "Milky Way Galaxy") {
+                activeStarSystems.push({ name: "Sol System (Solar Core)", x: 280, y: 190, starType: "star-yellow", radius: 18, planetsCount: 6, isSol: true });
+                activeStarSystems.push({ name: "PSR B1919+21 (First Pulsar Discovered)", x: 900, y: -700, starType: "pulsar", radius: 6, planetsCount: 2 });
+                activeStarSystems.push({ name: "Gargantua Accretion Anomaly", x: -1100, y: 1300, starType: "blackhole", radius: 16, planetsCount: 4 });
             }
         }
 
