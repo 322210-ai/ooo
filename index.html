@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal Scale Sandbox Explorer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Universal Sandbox Simulator v2.0</title>
     <style>
         * {
             box-sizing: border-box;
@@ -24,11 +24,15 @@
             width: 100vw;
             height: 100vh;
             cursor: grab;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
         }
         #gameCanvas:active {
             cursor: grabbing;
         }
-        /* HUD and Telemetry Containers */
+        /* HUD UI Containers */
         .panel {
             position: absolute;
             background: rgba(2, 2, 8, 0.96);
@@ -36,6 +40,7 @@
             border-radius: 6px;
             padding: 15px;
             box-shadow: 0 0 25px rgba(0, 255, 170, 0.15);
+            z-index: 10;
             pointer-events: auto;
         }
         #topControls {
@@ -45,19 +50,18 @@
             display: flex;
             gap: 15px;
             align-items: center;
-            z-index: 10;
         }
         #leftMatrix {
             top: 20px;
             left: 20px;
-            width: 300px;
+            width: 280px;
             pointer-events: none;
             line-height: 1.4;
         }
         #rightInspector {
             top: 20px;
             right: 20px;
-            width: 340px;
+            width: 320px;
             max-height: calc(100vh - 40px);
             overflow-y: auto;
             display: none;
@@ -70,21 +74,20 @@
             border-bottom: 1px solid #00ffaa;
             padding-bottom: 4px;
             text-transform: uppercase;
-            font-size: 14px;
+            font-size: 13px;
         }
         .text-cyan { color: #00ffff; }
         .text-magenta { color: #ff00ff; }
         .text-amber { color: #ffaa00; }
         
-        /* Interactive Nav Controls */
         .nav-btn {
             background: rgba(0, 255, 170, 0.1);
             color: #00ffaa;
             border: 1px solid #00ffaa;
-            padding: 8px 16px;
+            padding: 6px 12px;
             cursor: pointer;
             font-family: inherit;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             border-radius: 4px;
             transition: all 0.2s ease;
@@ -102,145 +105,117 @@
             background: rgba(255, 0, 0, 0.2);
             border-color: #ff3333;
             color: #ff3333;
-            animation: pulse-red 1.5s infinite;
         }
-        @keyframes pulse-red {
-            50% { box-shadow: 0 0 15px rgba(255,51,51,0.6); }
-        }
-        /* Custom scrollbar for deep factual data boxes */
-        #rightInspector::-webkit-scrollbar { width: 6px; }
-        #rightInspector::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
-        #rightInspector::-webkit-scrollbar-thumb { background: #00ffff; border-radius: 3px; }
     </style>
 </head>
 <body>
 
     <div id="topControls" class="panel">
-        <button id="backLayerBtn" class="nav-btn" onclick="ascendLayer()">⏮ Ascend Viewport</button>
-        <button id="pauseBtn" class="nav-btn" onclick="toggleSimulation()">⏸ Simulation: ACTIVE</button>
+        <button id="backLayerBtn" class="nav-btn" onclick="ascendLayer()">⏮ Ascend View</button>
+        <button id="pauseBtn" class="nav-btn" onclick="toggleSimulation()"></div>
         <button id="macroViewBtn" class="nav-btn" onclick="resetZoom()">🔍 Reset View</button>
     </div>
 
     <div id="leftMatrix" class="panel">
-        <div class="heading">🛰️ Universal Telemetry</div>
+        <div class="heading">🛰️ Telemetry Matrix</div>
         <div id="currentLayerDisplay">Scope: Cosmic Web</div>
         <div id="coords">Vector: X=0, Y=0</div>
         <div id="zoom">Field Factor: 1.00x</div>
-        <div style="margin-top: 10px; font-size: 11px; color: #88aaaa; border-top: 1px dashed #446655; padding-top: 6px;">
-            • Click Core Entities to Open / Zoom<br>
-            • Hover over objects to view stats<br>
-            • Drag canvas to pan across space coordinates
-        </div>
     </div>
 
-    <div id="rightInspector" class="panel">
-        <!-- Injected Dynamically via Javascript Engine -->
-    </div>
+    <div id="rightInspector" class="panel"></div>
 
     <canvas id="gameCanvas"></canvas>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
+        // Robust Canvas Device Pixel Scaling for Chromebook Displays
         function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Core Engine Engine State Machine Configurations
+        // Universe State Engine Constants
         const VISUAL_LAYERS = { COSMIC: 0, GALACTIC: 1, SOLAR: 2 };
         let activeLayer = VISUAL_LAYERS.COSMIC;
         let isSimulationRunning = true;
         let timeGlobal = 0;
 
-        // Interactive Tracking Vectors
-        let cameraX = 0; let cameraY = 0; let zoom = 1.0;
-        let targetCameraX = 0; let targetCameraY = 0; let targetZoom = 1.0;
+        // Viewport Coordinates and Focus Targets
+        let cameraX = 0; let cameraY = 0; let zoom = 0.5;
+        let targetCameraX = 0; let targetCameraY = 0; let targetZoom = 0.5;
         let isDragging = false; let lastMouseX = 0; let lastMouseY = 0;
         let hoveredEntity = null;
 
-        // Procedural Global Object Memory Arrays
+        // Persistent Simulation Data Registries
         let activeGalaxies = [];
         let activeNebulae = [];
         let activeStarSystems = [];
         let activePlanets = [];
 
-        // Active Object Focus Indexes
         let selectedGalaxyIndex = null;
         let selectedStarSystemIndex = null;
 
-        // Multi-Layer Deep Parallax Background Matrices
-        const backgroundStarsL1 = [];
-        const backgroundStarsL2 = [];
-        const backgroundStarsL3 = [];
-        const regionalNebulaClouds = [];
+        // Deep Field Parallax Star Clusters Matrix Arrays
+        const starsLayer1 = [];
+        const starsLayer2 = [];
+        const starsLayer3 = [];
+        const skyNebulae = [];
 
-        function generateDeepSkyBackdrop() {
-            // Build Deep-Field Dim Stars Array
+        function generateDeepSky() {
+            // Populate background star field arrays over a broad rendering grid
             for (let i = 0; i < 800; i++) {
-                backgroundStarsL1.push({
-                    x: (Math.random() - 0.5) * 30000,
-                    y: (Math.random() - 0.5) * 30000,
-                    r: Math.random() * 0.8 + 0.2
-                });
+                starsLayer1.push({ x: (Math.random() - 0.5) * 16000, y: (Math.random() - 0.5) * 16000, r: Math.random() * 0.8 + 0.2 });
             }
-            // Build Mid-Field Medium Brightness Stars Array
             for (let i = 0; i < 500; i++) {
-                backgroundStarsL2.push({
-                    x: (Math.random() - 0.5) * 30000,
-                    y: (Math.random() - 0.5) * 30000,
-                    r: Math.random() * 1.4 + 0.6
-                });
+                starsLayer2.push({ x: (Math.random() - 0.5) * 16000, y: (Math.random() - 0.5) * 16000, r: Math.random() * 1.4 + 0.6 });
             }
-            // Build Near-Field Twinkling Quantum Variable Stars Array
             for (let i = 0; i < 200; i++) {
-                backgroundStarsL3.push({
-                    x: (Math.random() - 0.5) * 30000,
-                    y: (Math.random() - 0.5) * 30000,
-                    r: Math.random() * 2.5 + 1.5,
-                    phase: Math.random() * Math.PI
-                });
+                starsLayer3.push({ x: (Math.random() - 0.5) * 16000, y: (Math.random() - 0.5) * 16000, r: Math.random() * 2.5 + 1.2, phase: Math.random() * Math.PI });
             }
-            // Ambient Space Dust Interstellar Gas Cloud Layers
-            const cloudPalettes = [
-                'rgba(120, 0, 220, 0.03)', 'rgba(0, 80, 240, 0.03)',
-                'rgba(0, 180, 130, 0.02)', 'rgba(220, 0, 90, 0.02)',
-                'rgba(240, 140, 0, 0.015)'
+            
+            // Generate volumetric background space dust patches
+            const cloudColors = [
+                'rgba(140, 0, 200, 0.04)', 'rgba(0, 70, 220, 0.04)', 
+                'rgba(0, 160, 120, 0.03)', 'rgba(200, 0, 70, 0.03)'
             ];
-            for (let i = 0; i < 80; i++) {
-                regionalNebulaClouds.push({
-                    x: (Math.random() - 0.5) * 26000,
-                    y: (Math.random() - 0.5) * 26000,
-                    r: Math.random() * 1500 + 600,
-                    color: cloudPalettes[Math.floor(Math.random() * cloudPalettes.length)]
+            for (let i = 0; i < 60; i++) {
+                skyNebulae.push({
+                    x: (Math.random() - 0.5) * 14000,
+                    y: (Math.random() - 0.5) * 14000,
+                    r: Math.random() * 1200 + 400,
+                    color: cloudColors[Math.floor(Math.random() * cloudColors.length)]
                 });
             }
         }
-        generateDeepSkyBackdrop();
-               // Procedural Naming Matrix Generators
+        generateDeepSky();
+        // Procedural Naming Matrix Catalogs
         const galaxyPrefixes = ["Andromeda", "MilkyWay", "Triangulum", "Sombrero", "Whirlpool", "Centaurus", "Bode", "Cartwheel", "Cosmic", "Helix"];
         const systemPrefixes = ["Alpha", "Kepler", "Gliese", "Wasp", "Kelt", "TOI", "HD", "PSR", "Vega", "Sirius", "Proxima"];
         const planetPrefixes = ["Prime", "b", "c", "d", "e", "f", "g", "Major", "Minor", "Vera", "Zeta"];
 
-        // High-Fidelity Factual Astrobiology Database Templates
+        // Scientific Fact Templates
         const planetFactualTemplates = {
             craters: { desc: "Airless, scarred rocky world with severe tectonic fractures and impact basins.", comp: "Silicate Rock, Iron Core", gravity: "0.38g", temp: "167°C / -173°C", hazard: "Extreme Radiation" },
             atmosphere: { desc: "Superheated atmospheric pressure matrix running dense sulfuric cloud structures.", comp: "Carbon Dioxide, Nitrogen", gravity: "0.91g", temp: "464°C", hazard: "Acid Rain, Crushing Pressure" },
-            continents: { desc: "Biologically active garden world featuring liquid water oceans and a oxygenated troposphere.", comp: "Water, Nitrogen, Oxygen", gravity: "1.00g", temp: "15°C", hazard: "None Detected" },
+            continents: { desc: "Biologically active garden world featuring liquid water oceans and an oxygenated troposphere.", comp: "Water, Nitrogen, Oxygen", gravity: "1.00g", temp: "15°C", hazard: "None Detected" },
             icecaps: { desc: "Sub-zero desert planet showing iron-oxide silt dunes and frozen carbon dioxide poles.", comp: "Iron-Rich Basalt, CO2 Ice", gravity: "0.37g", temp: "-62°C", hazard: "Dust Storms" },
             rings: { desc: "Low-density gas giant surrounded by a massive, highly reflective ice-particle ring disk.", comp: "Hydrogen, Helium, Water Ice", gravity: "0.93g", temp: "-138°C", hazard: "Ring Shearing" }
         };
 
-        // Fixed Universal Map Builder with Automatic Initial Viewport Centering
+        // Core Catalog Data Map Builder
         function generateUniverseMap() {
             activeGalaxies = [];
             resizeCanvas();
             cameraX = 0; cameraY = 0; targetCameraX = 0; targetCameraY = 0;
             zoom = 0.5; targetZoom = 0.5;
 
-            // 1. Generate Core Known Catalog Foundations
+            // 1. Generate Explicit Core Real-World Galaxies
             activeGalaxies.push({
                 name: "Milky Way Galaxy", x: 0, y: 0, r: 180, type: "spiral", density: 140, spin: 0.002,
                 desc: "Home galaxy of humanity. Features a massive central core barred structure and four primary evolutionary spiral star arms."
@@ -258,7 +233,7 @@
                 desc: "An incredibly rare, perfect ring galaxy formation showcasing an isolated outer ring of hot blue stars circling an older yellow nucleus."
             });
 
-            // 2. Procedural Deep-Field Galaxies Generator Array
+            // 2. Procedural Deep-Field Galaxies Array Generation
             for (let i = 0; i < 45; i++) {
                 let ang = Math.random() * Math.PI * 2;
                 let dist = Math.random() * 5000 + 1500;
@@ -274,7 +249,6 @@
                 });
             }
         }
-
         function populateGalaxySystems(galIdx) {
             activeStarSystems = []; activeNebulae = [];
             let gal = activeGalaxies[galIdx];
@@ -329,211 +303,117 @@
             }
         }
 
-        function populateGalaxySystems(galIdx) {
-            activeStarSystems = [];
-            activeNebulae = [];
-            let gal = activeGalaxies[galIdx];
-            
-            // Set up a local random number generator tied to the galaxy name to ensure consistent procedural content generation
-            let seedValue = 0;
-            for (let charIdx = 0; charIdx < gal.name.length; charIdx++) { seedValue += gal.name.charCodeAt(charIdx); }
-            function seededRandom() { let x = Math.sin(seedValue++) * 10000; return x - Math.floor(x); }
-
-            // Procedural Nebula Gas placements inside the targeted Galaxy cluster map boundary
-            const colors = ['rgba(255,0,150,', 'rgba(0,180,255,', 'rgba(0,255,150,', 'rgba(255,100,0,'];
-            for (let i = 0; i < 6; i++) {
-                let rAng = seededRandom() * Math.PI * 2;
-                let rRad = seededRandom() * gal.r * 2.5;
-                activeNebulae.push({
-                    name: systemPrefixes[Math.floor(seededRandom() * systemPrefixes.length)] + " Cosmic Nursery",
-                    x: Math.cos(rAng) * rRad, y: Math.sin(rAng) * rRad,
-                    r: seededRandom() * 400 + 200,
-                    color: colors[Math.floor(seededRandom() * colors.length)] + '0.04)'
-                });
-            }
-
-            // Always inject a physics-mode black hole right at the absolute center coordinate of the galaxy
-            activeStarSystems.push({ name: "Central Supermassive Black Hole", x: 0, y: 0, starType: "blackhole", radius: 25, planetsCount: 0 });
-
-            // Seed star systems throughout the active galaxy space boundaries
-            let count = gal.density;
-            for (let i = 0; i < count; i++) {
-                let sysX = 0; let sysY = 0;
-                
-                if (gal.type === "spiral") {
-                    let arm = Math.floor(seededRandom() * 4);
-                    let angle = (arm * Math.PI / 2) + (seededRandom() * 2.5);
-                    let distance = (seededRandom() * gal.r * 4.5) + 80;
-                    angle += distance * 0.0025; // Create spiral arm curvature physics mapping rules
-                    sysX = Math.cos(angle) * distance + (seededRandom() - 0.5) * 60;
-                    sysY = Math.sin(angle) * distance + (seededRandom() - 0.5) * 60;
-                } else if (gal.type === "ring") {
-                    let angle = seededRandom() * Math.PI * 2;
-                    let distance = gal.r * 3.5 + (seededRandom() - 0.5) * 50;
-                    if (seededRandom() < 0.15) distance = seededRandom() * 40; // Place some older stars in the inner nucleus hub
-                    sysX = Math.cos(angle) * distance; sysY = Math.sin(angle) * distance;
-                } else { // Elliptical uniform distributions
-                    let angle = seededRandom() * Math.PI * 2;
-                    let distance = seededRandom() * gal.r * 3.8;
-                    sysX = Math.cos(angle) * distance; sysY = Math.sin(angle) * distance;
-                }
-
-                let rollType = seededRandom();
-                let type = "star-yellow";
-                if (rollType < 0.25) type = "star-blue";
-                else if (rollType < 0.45) type = "star-red";
-                else if (rollType < 0.52) type = "pulsar";
-
-                activeStarSystems.push({
-                    name: systemPrefixes[Math.floor(seededRandom() * systemPrefixes.length)] + " System-" + Math.floor(seededRandom() * 900 + 100),
-                    x: sysX, y: sysY, starType: type,
-                    radius: type === "pulsar" ? 7 : (type === "star-blue" ? 22 : 14),
-                    planetsCount: Math.floor(seededRandom() * 6) + 3
-                });
-            }
-
-            // Replace standard random generations with factual exacts if the user opens the Milky Way
-            if (gal.name === "Milky Way Galaxy") {
-                activeStarSystems[1] = { name: "Sol System (Solar Core)", x: 280, y: 190, starType: "star-yellow", radius: 18, planetsCount: 6, isSol: true };
-                activeStarSystems[2] = { name: "PSR B1919+21 (First Pulsar Discovered)", x: 900, y: -700, starType: "pulsar", radius: 6, planetsCount: 2 };
-                activeStarSystems[3] = { name: "Gargantua Accretion Anomaly", x: -1100, y: 1300, starType: "blackhole", radius: 16, planetsCount: 4 };
-            }
-        }
         function populateSystemPlanets(sysIdx) {
             activePlanets = [];
             let sys = activeStarSystems[sysIdx];
             if (sys.starType === "blackhole" && sys.planetsCount === 0) return;
 
-            // Use the system name to generate a stable local random seed
             let seedValue = 0;
             for (let charIdx = 0; charIdx < sys.name.length; charIdx++) { seedValue += sys.name.charCodeAt(charIdx); }
             function seededRandom() { let x = Math.sin(seedValue++) * 10000; return x - Math.floor(x); }
 
-            // 1. Check for the Factual Sol System Setup
             if (sys.isSol) {
                 activePlanets.push({ name: "Mercury", orbitRadius: 150, radius: 7, color: "#95989a", speed: 0.022, angle: seededRandom()*6, type: "craters", mass: "0.055 Earths", size: "4,879 km", density: "5.43 g/cm³", fact: planetFactualTemplates.craters });
                 activePlanets.push({ name: "Venus", orbitRadius: 240, radius: 13, color: "#e6a163", speed: 0.016, angle: seededRandom()*6, type: "atmosphere", mass: "0.815 Earths", size: "12,104 km", density: "5.24 g/cm³", fact: planetFactualTemplates.atmosphere });
                 activePlanets.push({ name: "Earth", orbitRadius: 350, radius: 15, color: "#3289d6", speed: 0.012, angle: seededRandom()*6, type: "continents", mass: "1.000 Earths", size: "12,742 km", density: "5.51 g/cm³", fact: planetFactualTemplates.continents });
                 activePlanets.push({ name: "Mars", orbitRadius: 460, radius: 10, color: "#d14b15", speed: 0.009, angle: seededRandom()*6, type: "icecaps", mass: "0.107 Earths", size: "6,779 km", density: "3.93 g/cm³", fact: planetFactualTemplates.icecaps });
-                activePlanets.push({ name: "Jupiter", orbitRadius: 620, radius: 34, color: "#d8a06d", speed: 0.005, angle: seededRandom()*6, type: "atmosphere", mass: "317.8 Earths", size: "139,820 km", density: "1.33 g/cm³", fact: { desc: "Massive gas giant featuring active atmospheric storm belts and the Great Red Spot cyclical hyper-vortex.", comp: "Hydrogen, Helium Gas Layers", gravity: "2.52g", temp: "-108°C", hazard: "Atmospheric Shearing, Severe Gravitational Pull" } });
+                activePlanets.push({ name: "Jupiter", orbitRadius: 620, radius: 34, color: "#d8a06d", speed: 0.005, angle: seededRandom()*6, type: "atmosphere", mass: "317.8 Earths", size: "139,820 km", density: "1.33 g/cm³", fact: { desc: "Massive gas giant featuring active atmospheric storm belts and the Great Red Spot.", comp: "Hydrogen, Helium Gas Layers", gravity: "2.52g", temp: "-108°C", hazard: "Atmospheric Shearing, Severe Gravitational Pull" } });
                 activePlanets.push({ name: "Saturn", orbitRadius: 780, radius: 28, color: "#e2bf7d", speed: 0.003, angle: seededRandom()*6, type: "rings", mass: "95.2 Earths", size: "116,460 km", density: "0.69 g/cm³", fact: planetFactualTemplates.rings });
                 return;
             }
 
-            // 2. Fallback to Procedural Exoplanet Generations
             let baseOrbit = 160;
             for (let i = 0; i < sys.planetsCount; i++) {
                 baseOrbit += (seededRandom() * 90) + 60;
                 let rollType = seededRandom();
-                let type = "craters";
-                let color = "#888888";
+                let type = "craters"; let color = "#888888";
                 let name = sys.name.split(" ")[0] + "-" + planetPrefixes[i];
                 let mass = (seededRandom() * 5).toFixed(2) + " Earths";
                 let size = Math.floor(seededRandom() * 20000 + 3000) + " km";
                 let density = (seededRandom() * 3 + 3).toFixed(2) + " g/cm³";
                 let customFact = null;
 
-                if (rollType < 0.25) {
-                    type = "craters"; color = "#7a7d80";
-                } else if (rollType < 0.50) {
-                    type = "atmosphere"; color = "#cca37a";
-                } else if (rollType < 0.70) {
-                    type = "icecaps"; color = "#b0c4de";
-                } else if (rollType < 0.88) {
-                    type = "rings"; color = "#deb887";
-                } else {
-                    // Inject Ultra-Hot Exoplanet Anomalies
+                if (rollType < 0.25) { type = "craters"; color = "#7a7d80"; } 
+                else if (rollType < 0.50) { type = "atmosphere"; color = "#cca37a"; } 
+                else if (rollType < 0.70) { type = "icecaps"; color = "#b0c4de"; } 
+                else if (rollType < 0.88) { type = "rings"; color = "#deb887"; } 
+                else {
                     type = "atmosphere";
                     if (seededRandom() < 0.5) {
-                        name = "Kelt-9b Variant"; color = "#ff3300"; mass = "915.4 Earths"; size: "200,000 km";
-                        customFact = { desc: "Ultra-hot Jupiter locked in a tight stellar warp loop. Atmospheric molecules are completely torn apart by blazing daytime radiation.", comp: "Ionized Titanium, Iron Dust", gravity: "4.20g", temp: "4,300°C", hazard: "Extreme Thermal Disintegration" };
+                        name = "Kelt-9b Variant"; color = "#ff4500"; mass = "915.4 Earths"; size = "200,000 km";
+                        customFact = { desc: "Ultra-hot Jupiter locked in a tight stellar warp loop. Daytime radiation rips molecules apart.", comp: "Ionized Titanium, Iron Dust", gravity: "4.20g", temp: "4,300°C", hazard: "Extreme Thermal Disintegration" };
                     } else {
-                        name = "Wasp-76b Variant"; color = "#3b0066"; mass = "292.1 Earths"; size: "170,000 km";
-                        customFact = { desc: "Exotic tidally locked world. Extreme atmospheric wind gradients cause vaporized gaseous iron to condense and rain down as liquid metal droplets on the dark side.", comp: "Iron Vapor, Silicates", gravity: "2.10g", temp: "2,400°C", hazard: "Liquid Iron Precipitation" };
+                        name = "Wasp-76b Variant"; color = "#3b0066"; mass = "292.1 Earths"; size = "170,000 km";
+                        customFact = { desc: "Extreme atmospheric gradients cause vaporized gaseous iron to condense and rain down as liquid metal on the dark side.", comp: "Iron Vapor, Silicates", gravity: "2.10g", temp: "2,400°C", hazard: "Liquid Iron Precipitation" };
                     }
                 }
 
                 activePlanets.push({
-                    name: name, orbitRadius: baseOrbit,
-                    radius: type === "rings" ? seededRandom() * 10 + 14 : seededRandom() * 12 + 6,
-                    color: color, speed: (0.02 * 150) / baseOrbit,
-                    angle: seededRandom() * Math.PI * 2, type: type,
-                    mass: mass, size: size, density: density,
-                    fact: customFact || planetFactualTemplates[type]
+                    name: name, orbitRadius: baseOrbit, radius: type === "rings" ? seededRandom() * 10 + 14 : seededRandom() * 12 + 6,
+                    color: color, speed: (0.02 * 150) / baseOrbit, angle: seededRandom() * Math.PI * 2, type: type, mass: mass, size: size, density: density, fact: customFact || planetFactualTemplates[type]
                 });
             }
         }
-        // High-Fidelity Custom Rendering Engine Filters
+        // Rendering Shaders for Stellar Objects & Advanced Accretion Disks
         function drawCustomCelestialObject(body, screenX, screenY, scaledRadius) {
-            // 1. Render Central Supermassive Accretion Black Holes
             if (body.starType === "blackhole") {
                 ctx.save();
                 ctx.translate(screenX, screenY);
                 ctx.rotate(timeGlobal * 0.015);
                 
-                // Advanced Gravitational Lensing Backing Disk Glow
-                let lensGrad = ctx.createRadialGradient(0, 0, scaledRadius * 0.9, 0, 0, scaledRadius * 6);
-                lensGrad.addColorStop(0, 'rgba(255, 130, 0, 0.9)');
-                lensGrad.addColorStop(0.15, 'rgba(255, 40, 0, 0.6)');
-                lensGrad.addColorStop(0.5, 'rgba(90, 0, 180, 0.15)');
-                lensGrad.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.strokeStyle = lensGrad;
-                ctx.lineWidth = scaledRadius * 2.2;
+                // Realistic Accretion Disk Simulation and Gravitational Lensing
+                let diskGrad = ctx.createRadialGradient(0, 0, scaledRadius * 1.1, 0, 0, scaledRadius * 5);
+                diskGrad.addColorStop(0, '#ffaa00');
+                diskGrad.addColorStop(0.2, '#ff3300');
+                diskGrad.addColorStop(0.6, 'rgba(80,0,220,0.15)');
+                diskGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.strokeStyle = diskGrad;
+                ctx.lineWidth = scaledRadius * 1.8;
                 
-                // Elliptical warp to simulate Einstein light shearing bends
                 ctx.beginPath();
-                ctx.ellipse(0, 0, scaledRadius * 4.5, scaledRadius * 1.4, Math.PI / 6, 0, Math.PI * 2);
+                ctx.ellipse(0, 0, scaledRadius * 4.5, scaledRadius * 1.5, Math.PI / 6, 0, Math.PI * 2);
                 ctx.stroke();
                 ctx.restore();
                 
-                // Absolute Zero-Light Event Horizon Void Core
+                // Infinite Dark Event Horizon Hole Center Void Core
                 ctx.fillStyle = '#000000';
                 ctx.beginPath();
-                ctx.arc(screenX, screenY, scaledRadius * 0.95, 0, Math.PI * 2);
+                ctx.arc(screenX, screenY, scaledRadius * 0.9, 0, Math.PI * 2);
                 ctx.fill();
             }
-            
-            // 2. Render High-Energy Rapid Spinning Pulsar Beams
             else if (body.starType === "pulsar") {
-                let spinRate = timeGlobal * 0.12; // Safely modulated timing rotation speed to prevent processing crash
+                let spin = timeGlobal * 0.12; // Modulated rotation speed to prevent processing overhead freeze
                 ctx.save();
                 ctx.translate(screenX, screenY);
-                ctx.rotate(spinRate);
+                ctx.rotate(spin);
                 
-                // Emit Twin Gamma-Ray Particle Radiation Relativistic Jets
-                for (let beamOffset of [0, Math.PI]) {
+                // Blazing Radiation Beam Emitter Loops
+                for (let angleOffset of [0, Math.PI]) {
                     ctx.save();
-                    ctx.rotate(beamOffset);
+                    ctx.rotate(angleOffset);
                     let jetGrad = ctx.createLinearGradient(0, 0, 0, -2000 * zoom);
                     jetGrad.addColorStop(0, '#ffffff');
-                    jetGrad.addColorStop(0.2, 'rgba(0, 200, 255, 0.35)');
+                    jetGrad.addColorStop(0.3, 'rgba(0,180,255,0.25)');
                     jetGrad.addColorStop(1, 'rgba(0,0,0,0)');
                     ctx.fillStyle = jetGrad;
                     
                     ctx.beginPath();
-                    ctx.moveTo(-3 * zoom, 0);
-                    ctx.lineTo(3 * zoom, 0);
-                    ctx.lineTo(50 * zoom, -2000 * zoom);
-                    ctx.lineTo(-50 * zoom, -2000 * zoom);
-                    ctx.closePath();
-                    ctx.fill();
+                    ctx.moveTo(-4 * zoom, 0); ctx.lineTo(4 * zoom, 0);
+                    ctx.lineTo(60 * zoom, -2000 * zoom); ctx.lineTo(-60 * zoom, -2000 * zoom);
+                    ctx.closePath(); ctx.fill();
                     ctx.restore();
                 }
                 ctx.restore();
                 
-                // Core Neutron Star Core Sphere
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(screenX, screenY, scaledRadius * 1.3, 0, Math.PI * 2);
+                ctx.arc(screenX, screenY, scaledRadius * 1.4, 0, Math.PI * 2);
                 ctx.fill();
             }
-            
-            // 3. Render Flaring Stellar Nuclear Fusion Cores
             else {
-                let sunColor = "#ffea00";
-                let flareColor = "#ff4500";
-                if (body.starType === "star-blue") { sunColor = "#ffffff"; flareColor = "#00bfff"; }
-                if (body.starType === "star-red") { sunColor = "#ff3333"; flareColor = "#8b0000"; }
+                let sunColor = "#ffea00"; let flareColor = "#ff5500";
+                if (body.starType === "star-blue") { sunColor = "#ffffff"; flareColor = "#00ffff"; }
+                if (body.starType === "star-red") { sunColor = "#ff3333"; flareColor = "#880000"; }
                 
                 let dynamicPulse = Math.sin(timeGlobal * 0.04) * (scaledRadius * 0.05);
                 let coreGrad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, scaledRadius + dynamicPulse);
@@ -544,62 +424,55 @@
                 
                 ctx.fillStyle = coreGrad;
                 ctx.beginPath();
-                ctx.arc(screenX, screenY, (scaledRadius + dynamicPulse) * 2.0, 0, Math.PI * 2);
+                ctx.arc(screenX, screenY, (scaledRadius + dynamicPulse) * 2.2, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
 
-        // Procedural Planet Texturing & 3D Lighting Shadow Engine
+        // Detailed Planet Texture Painter & Shadows Model
         function renderPlanetTexture(ctx, radius, body) {
             ctx.save();
             ctx.beginPath();
             ctx.arc(0, 0, radius, 0, Math.PI * 2);
-            ctx.clip(); // Limit texture draws inside surface border
+            ctx.clip();
             
-            // Draw surface base paint
             ctx.fillStyle = body.color;
             ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
             
-            // Inject local geography layers
             if (body.type === 'craters') {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
                 ctx.beginPath(); ctx.arc(-radius * 0.3, -radius * 0.2, radius * 0.25, 0, Math.PI * 2); ctx.fill();
                 ctx.beginPath(); ctx.arc(radius * 0.4, radius * 0.3, radius * 0.2, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.arc(-radius * 0.1, radius * 0.5, radius * 0.15, 0, Math.PI * 2); ctx.fill();
             } 
             else if (body.type === 'atmosphere') {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
-                ctx.fillRect(-radius, -radius * 0.4, radius * 2, radius * 0.22);
-                ctx.fillRect(-radius, radius * 0.3, radius * 2, radius * 0.18);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.fillRect(-radius, -radius * 0.4, radius * 2, radius * 0.2);
+                ctx.fillRect(-radius, radius * 0.3, radius * 2, radius * 0.15);
             } 
             else if (body.type === 'continents') {
-                ctx.fillStyle = '#1b751b'; // Green terrestrial continents
+                ctx.fillStyle = '#1e7b1e';
                 ctx.beginPath();
-                ctx.ellipse(-radius * 0.2, -radius * 0.1, radius * 0.6, radius * 0.4, 0, 0, Math.PI * 2);
-                ctx.ellipse(radius * 0.3, radius * 0.2, radius * 0.4, radius * 0.4, Math.PI / 4, 0, Math.PI * 2);
+                ctx.ellipse(-radius * 0.2, -radius * 0.1, radius * 0.5, radius * 0.4, 0, 0, Math.PI * 2);
+                ctx.ellipse(radius * 0.3, radius * 0.2, radius * 0.4, Math.max(1, radius * 0.4), Math.PI / 4, 0, Math.PI * 2);
                 ctx.fill();
             } 
             else if (body.type === 'icecaps') {
                 ctx.fillStyle = '#ffffff';
-                ctx.beginPath(); ctx.arc(0, -radius * 0.85, radius * 0.4, 0, Math.PI, false); ctx.fill();
-                ctx.beginPath(); ctx.arc(0, radius * 0.85, radius * 0.3, Math.PI, 0, false); ctx.fill();
+                ctx.beginPath(); ctx.arc(0, -radius * 0.8, radius * 0.35, 0, Math.PI, false); ctx.fill();
             }
             
-            // Overlay 3D Volumetric Linear Twilight-Zone Shadow Gradient Mask
             let shadowGrad = ctx.createLinearGradient(-radius, -radius, radius, radius);
-            shadowGrad.addColorStop(0, 'rgba(255,255,255,0.06)');
-            shadowGrad.addColorStop(0.5, 'rgba(0,0,0,0.15)');
-            shadowGrad.addColorStop(1, 'rgba(0,0,0,0.88)');
+            shadowGrad.addColorStop(0, 'rgba(255,255,255,0.05)');
+            shadowGrad.addColorStop(1, 'rgba(0,0,0,0.85)');
             ctx.fillStyle = shadowGrad;
             ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
             ctx.restore();
             
-            // Draw secondary independent outer ring paths
             if (body.type === 'rings') {
-                ctx.strokeStyle = 'rgba(215, 185, 145, 0.55)';
+                ctx.strokeStyle = 'rgba(210, 180, 140, 0.6)';
                 ctx.lineWidth = Math.max(1, radius * 0.45);
                 ctx.save();
-                ctx.scale(1.8, 0.4); // Flat warp factor to match alignment tilt
+                ctx.scale(1.8, 0.4);
                 ctx.beginPath();
                 ctx.arc(0, 0, radius * 0.85, 0, Math.PI * 2);
                 ctx.stroke();
@@ -621,12 +494,12 @@
                 content = `
                     <div class="heading" style="color:#00ffaa">🌌 Galaxy Diagnostic</div>
                     <div style="font-size:16px;font-weight:bold;margin-bottom:8px;">${entity.name}</div>
-                    <div style="color:#88aaaa;margin-bottom:12px;">${entity.desc}</div>
+                    <div style="color:#88aaaa;margin-bottom:12px;font-size:11px;">${entity.desc}</div>
                     <div><span class="text-cyan">Morphology:</span> ${entity.type.toUpperCase()}</div>
                     <div><span class="text-cyan">Star Density:</span> ~${entity.density} Billion Cores</div>
                     <div><span class="text-cyan">Kinetic Spin:</span> ${(entity.spin * 1000).toFixed(2)} rad/s</div>
-                    <div style="margin-top:15px;border-top:1px dashed #446655;padding-top:10px;text-align:center;color:#ffaa00;font-size:11px;animation:blink 2s infinite;">
-                        [ CLICK CORE TO OPEN GALAXY ]
+                    <div style="margin-top:15px;border-top:1px dashed #446655;padding-top:10px;text-align:center;color:#ffaa00;font-size:11px;">
+                        [ CLICK TO OPEN GALAXY ]
                     </div>
                 `;
             } 
@@ -639,7 +512,7 @@
                     <div><span class="text-magenta">Planetary Cores:</span> ${entity.planetsCount} Satellites</div>
                     <div><span class="text-magenta">Coordinates:</span> [X: ${Math.round(entity.x)}, Y: ${Math.round(entity.y)}]</div>
                     <div style="margin-top:15px;border-top:1px dashed #446655;padding-top:10px;text-align:center;color:#00ffff;font-size:11px;">
-                        [ CLICK SYSTEM TO MAP ORBITS ]
+                        [ CLICK TO MAP ORBITS ]
                     </div>
                 `;
             } 
@@ -659,7 +532,7 @@
                         <div><span class="text-cyan">Mean Thermal:</span></div><div>${entity.fact.temp}</div>
                     </div>
                     <div style="margin-top:12px;color:#ff3333;font-size:11px;font-weight:bold;border-top:1px dashed #ff3333;padding-top:8px;">
-                        ⚠️ EXTREME HAZARD: ${entity.fact.hazard}
+                        ⚠️ HAZARD: ${entity.fact.hazard}
                     </div>
                 `;
             }
@@ -667,7 +540,7 @@
             inspector.innerHTML = content;
         }
 
-        // Layer Switching Routing Control Engine
+        // Layer Switching Controls
         function selectEntityLayer(entity, currentLayer) {
             if (currentLayer === VISUAL_LAYERS.COSMIC) {
                 let idx = activeGalaxies.indexOf(entity);
@@ -726,21 +599,23 @@
                 btn.classList.add('paused');
             }
         }
+        
+        // Setup initial text template for pause button label
+        document.getElementById('pauseBtn').innerText = "⏸ Simulation: ACTIVE";
 
         function resetZoom() {
             targetCameraX = 0; targetCameraY = 0;
             targetZoom = activeLayer === VISUAL_LAYERS.COSMIC ? 0.4 : 0.6;
         }
-        // Universal Input Event Interception Matrices
+        // Mouse and Touch Click Interceptors
         window.addEventListener('mousedown', (e) => {
             if (e.target.closest('.panel')) return;
             isDragging = true;
             lastMouseX = e.clientX; lastMouseY = e.clientY;
         });
-
+        // Screen Drag Panning Handler
         window.addEventListener('mousemove', (e) => {
             const centerX = canvas.width / 2; const centerY = canvas.height / 2;
-            // Map raw screenspace mouse vectors into local cosmic map grid coordinates
             let mx = (e.clientX - centerX) / zoom + cameraX;
             let my = (e.clientY - centerY) / zoom + cameraY;
 
@@ -751,8 +626,7 @@
                 targetCameraX = cameraX; targetCameraY = cameraY;
                 lastMouseX = e.clientX; lastMouseY = e.clientY;
             }
-
-            // Real-Time Coordinate Proximity Target Profiler
+            // Proximity Hover Detection Matrix
             let found = null;
             if (activeLayer === VISUAL_LAYERS.COSMIC) {
                 activeGalaxies.forEach(gal => {
@@ -763,7 +637,7 @@
             else if (activeLayer === VISUAL_LAYERS.GALACTIC) {
                 activeStarSystems.forEach(sys => {
                     let dx = mx - sys.x; let dy = my - sys.y;
-                    if (Math.sqrt(dx*dx + dy*dy) < Math.max(15, sys.radius)) found = sys;
+                    if (Math.sqrt(dx*dx + dy*dy) < Math.max(20, sys.radius * 2)) found = sys;
                 });
             } 
             else if (activeLayer === VISUAL_LAYERS.SOLAR) {
@@ -771,7 +645,7 @@
                     let px = p.orbitRadius * Math.cos(p.angle);
                     let py = p.orbitRadius * Math.sin(p.angle);
                     let dx = mx - px; let dy = my - py;
-                    if (Math.sqrt(dx*dx + dy*dy) < Math.max(12, p.radius)) found = p;
+                    if (Math.sqrt(dx*dx + dy*dy) < Math.max(15, p.radius * 1.2)) found = p;
                 });
             }
 
@@ -780,24 +654,24 @@
                 inspectEntityDetails(found, activeLayer);
             }
         });
-
+        // Mouse Up and Click Release Listeners
         window.addEventListener('mouseup', () => isDragging = false);
         window.addEventListener('mouseleave', () => isDragging = false);
 
+        // Zoom Scale Wheel Adjustment Matrix
         window.addEventListener('wheel', (e) => {
             if (e.deltaY < 0) targetZoom *= 1.3;
             else targetZoom /= 1.3;
             targetZoom = Math.max(0.01, Math.min(targetZoom, 5.0));
         });
-
+        // Click and Navigation Triggers
         window.addEventListener('click', (e) => {
             if (e.target.closest('.panel')) return;
             if (hoveredEntity && activeLayer !== VISUAL_LAYERS.SOLAR) {
                 selectEntityLayer(hoveredEntity, activeLayer);
             }
         });
-
-        // Frame Calculations Routing Pipeline
+        // Physics Engine Matrix Updater
         function updatePhysics() {
             if (!isSimulationRunning) return;
             timeGlobal += 1;
@@ -809,83 +683,87 @@
                 activePlanets.forEach(p => { p.angle += p.speed; });
             }
         }
-
-        // Master Screen Graphics Processor Node
+        // Screen Renderer and Ambient Nebula Layer Setup
         function render() {
             ctx.fillStyle = '#010103'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             const centerX = canvas.width / 2; const centerY = canvas.height / 2;
 
-            // 1. Render Interstellar Nebula Gas Clouds
-            regionalNebulaClouds.forEach(neb => {
-                const sX = (neb.x - cameraX) * zoom + centerX; const sY = (neb.y - cameraY) * zoom + centerY; const sR = neb.r * zoom;
-                if (sX + sR > 0 && sX - sR < canvas.width && sY + sR > 0 && sY - sR < canvas.height) {
-                    let grad = ctx.createRadialGradient(sX, sY, 0, sX, sY, sR);
+            skyNebulae.forEach(neb => {
+                const screenX = (neb.x - cameraX) * zoom + centerX; 
+                const screenY = (neb.y - cameraY) * zoom + centerY; 
+                const scaledRadius = neb.r * zoom;
+                if (screenX + scaledRadius > 0 && screenX - scaledRadius < canvas.width && screenY + scaledRadius > 0 && screenY - scaledRadius < canvas.height) {
+                    let grad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, scaledRadius);
                     grad.addColorStop(0, neb.color); grad.addColorStop(1, 'rgba(0,0,0,0)');
-                    ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(sX, sY, sR, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(screenX, screenY, scaledRadius, 0, Math.PI * 2); ctx.fill();
                 }
             });
-
-            // 2. Render Parallax Starfields
+            // Parallax Starfields Layer Draw Node
             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            backgroundStarsL1.forEach(st => {
-                let sX = (st.x - cameraX * 0.3) * zoom + centerX; let sY = (st.y - cameraY * 0.3) * zoom + centerY;
-                if (sX >= 0 && sX <= canvas.width && sY >= 0 && sY <= canvas.height) ctx.fillRect(sX, sY, st.r, st.r);
+            starsLayer1.forEach(st => {
+                let screenX = (st.x - cameraX * 0.3) * zoom + centerX; let screenY = (st.y - cameraY * 0.3) * zoom + centerY;
+                if (screenX >= 0 && screenX <= canvas.width && screenY >= 0 && screenY <= canvas.height) ctx.fillRect(screenX, screenY, st.r, st.r);
             });
 
             ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
-            backgroundStarsL2.forEach(st => {
-                let sX = (st.x - cameraX * 0.6) * zoom + centerX; let sY = (st.y - cameraY * 0.6) * zoom + centerY;
-                if (sX >= 0 && sX <= canvas.width && sY >= 0 && sY <= canvas.height) {
-                    ctx.beginPath(); ctx.arc(sX, sY, st.r, 0, Math.PI * 2); ctx.fill();
+            starsLayer2.forEach(st => {
+                let screenX = (st.x - cameraX * 0.6) * zoom + centerX; let screenY = (st.y - cameraY * 0.6) * zoom + centerY;
+                if (screenX >= 0 && screenX <= canvas.width && screenY >= 0 && screenY <= canvas.height) {
+                    ctx.beginPath(); ctx.arc(screenX, screenY, st.r, 0, Math.PI * 2); ctx.fill();
                 }
             });
 
-            backgroundStarsL3.forEach(st => {
-                let sX = (st.x - cameraX * 0.9) * zoom + centerX; let sY = (st.y - cameraY * 0.9) * zoom + centerY;
-                if (sX >= 0 && sX <= canvas.width && sY >= 0 && sY <= canvas.height) {
+            starsLayer3.forEach(st => {
+                let screenX = (st.x - cameraX * 0.9) * zoom + centerX; let screenY = (st.y - cameraY * 0.9) * zoom + centerY;
+                if (screenX >= 0 && screenX <= canvas.width && screenY >= 0 && screenY <= canvas.height) {
                     let blink = Math.sin(timeGlobal * 0.04 + st.phase) * 0.4 + 0.6;
                     ctx.fillStyle = `rgba(200, 240, 255, ${blink})`;
-                    ctx.beginPath(); ctx.arc(sX, sY, st.r, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(screenX, screenY, st.r, 0, Math.PI * 2); ctx.fill();
                 }
             });
-
-            // 3. Layer Vector Graphics Generators
+            // Visual Layers Rendering router
             if (activeLayer === VISUAL_LAYERS.COSMIC) {
                 activeGalaxies.forEach(gal => {
-                    const sX = (gal.x - cameraX) * zoom + centerX; const sY = (gal.y - cameraY) * zoom + centerY; const sR = gal.r * zoom;
-                    if (sX + sR < 0 || sX - sR > canvas.width || sY + sR < 0 || sY - sR > canvas.height) return;
+                    const screenX = (gal.x - cameraX) * zoom + centerX; 
+                    const screenY = (gal.y - cameraY) * zoom + centerY; 
+                    const scaledRadius = gal.r * zoom;
+                    if (screenX + scaledRadius < 0 || screenX - scaledRadius > canvas.width || screenY + scaledRadius < 0 || screenY - scaledRadius > canvas.height) return;
 
-                    ctx.save(); ctx.translate(sX, sY); ctx.rotate(gal.angle || 0);
-                    let grad = ctx.createRadialGradient(0, 0, 0, 0, 0, sR);
+                    ctx.save(); ctx.translate(screenX, screenY); ctx.rotate(gal.angle || 0);
+                    let grad = ctx.createRadialGradient(0, 0, 0, 0, 0, scaledRadius);
                     grad.addColorStop(0, gal.type === 'spiral' ? '#ffffff' : (gal.type === 'ring' ? '#ffeecc' : '#ffddbb'));
                     grad.addColorStop(0.3, gal.type === 'spiral' ? '#00ffff' : '#ffaa00');
                     grad.addColorStop(0.8, '#ff00ff'); grad.addColorStop(1, 'rgba(0,0,0,0)');
                     ctx.fillStyle = grad;
                     
                     ctx.beginPath();
-                    if (gal.type === 'spiral') ctx.ellipse(0, 0, sR * 1.8, sR * 0.7, 0, 0, Math.PI * 2);
-                    else ctx.arc(0, 0, sR * 1.2, 0, Math.PI * 2);
+                    if (gal.type === 'spiral') ctx.ellipse(0, 0, scaledRadius * 1.8, scaledRadius * 0.7, 0, 0, Math.PI * 2);
+                    else ctx.arc(0, 0, scaledRadius * 1.2, 0, Math.PI * 2);
                     ctx.fill(); ctx.restore();
 
                     ctx.font = "12px 'Courier New'"; ctx.fillStyle = '#ffffff';
-                    ctx.fillText(gal.name, sX + 12, sY + 4);
+                    ctx.fillText(gal.name, screenX + 12, screenY + 4);
                 });
             } 
             else if (activeLayer === VISUAL_LAYERS.GALACTIC) {
                 activeNebulae.forEach(neb => {
-                    const sX = (neb.x - cameraX) * zoom + centerX; const sY = (neb.y - cameraY) * zoom + centerY; const sR = neb.r * zoom;
-                    let grad = ctx.createRadialGradient(sX, sY, 0, sX, sY, sR);
+                    const screenX = (neb.x - cameraX) * zoom + centerX; 
+                    const screenY = (neb.y - cameraY) * zoom + centerY; 
+                    const scaledRadius = neb.r * zoom;
+                    let grad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, scaledRadius);
                     grad.addColorStop(0, neb.color); grad.addColorStop(1, 'rgba(0,0,0,0)');
-                    ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(sX, sY, sR, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(screenX, screenY, scaledRadius, 0, Math.PI * 2); ctx.fill();
                 });
 
                 activeStarSystems.forEach(sys => {
-                    const sX = (sys.x - cameraX) * zoom + centerX; const sY = (sys.y - cameraY) * zoom + centerY; const sR = sys.radius * zoom;
-                    if (sX + sR < -100 || sX - sR > canvas.width + 100 || sY + sR < -100 || sY - sR > canvas.height + 100) return;
+                    const screenX = (sys.x - cameraX) * zoom + centerX; 
+                    const screenY = (sys.y - cameraY) * zoom + centerY; 
+                    const scaledRadius = sys.radius * zoom;
+                    if (screenX + scaledRadius < -100 || screenX - scaledRadius > canvas.width + 100 || screenY + scaledRadius < -100 || screenY - scaledRadius > canvas.height + 100) return;
 
-                    drawCustomCelestialObject(sys, sX, sY, sR);
+                    drawCustomCelestialObject(sys, screenX, screenY, scaledRadius);
                     ctx.font = "12px 'Courier New'"; ctx.fillStyle = '#ffffff';
-                    ctx.fillText(sys.name, sX + sR + 8, sY + 4);
+                    ctx.fillText(sys.name, screenX + scaledRadius + 8, screenY + 4);
                 });
             } 
             else if (activeLayer === VISUAL_LAYERS.SOLAR) {
@@ -896,18 +774,20 @@
                 activePlanets.forEach(p => {
                     let worldX = p.orbitRadius * Math.cos(p.angle);
                     let worldY = p.orbitRadius * Math.sin(p.angle);
-                    const sX = (worldX - cameraX) * zoom + centerX; const sY = (worldY - cameraY) * zoom + centerY; const sR = p.radius * zoom;
+                    const screenX = (worldX - cameraX) * zoom + centerX; 
+                    const screenY = (worldY - cameraY) * zoom + centerY; 
+                    const scaledRadius = p.radius * zoom;
 
                     ctx.beginPath(); ctx.arc(sunX, sunY, p.orbitRadius * zoom, 0, Math.PI * 2);
                     ctx.strokeStyle = 'rgba(0, 255, 170, 0.04)'; ctx.lineWidth = 1; ctx.stroke();
 
-                    if (sX + sR < -200 || sX - sR > canvas.width + 200 || sY + sR < -200 || sY - sR > canvas.height + 200) return;
+                    if (screenX + scaledRadius < -200 || screenX - scaledRadius > canvas.width + 200 || screenY + scaledRadius < -200 || screenY - scaledRadius > canvas.height + 200) return;
 
-                    ctx.save(); ctx.translate(sX, sY);
-                    renderPlanetTexture(ctx, sR, p); ctx.restore();
+                    ctx.save(); ctx.translate(screenX, screenY);
+                    renderPlanetTexture(ctx, scaledRadius, p); ctx.restore();
 
                     ctx.font = "12px 'Courier New'"; ctx.fillStyle = '#ffffff';
-                    ctx.fillText(p.name, sX + sR + 8, sY + 4);
+                    ctx.fillText(p.name, screenX + scaledRadius + 8, screenY + 4);
                 });
             }
         }
@@ -926,8 +806,8 @@
             requestAnimationFrame(masterLoop);
         }
 
-        // Initialize Runtime Hooks
         generateUniverseMap();
-</script>
+        masterLoop();
+    </script>
 </body>
 </html>
